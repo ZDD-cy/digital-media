@@ -1,0 +1,36 @@
+# ============================================================
+# Unreal Engine 忽略规则
+# 只提交源资产与配置，不提交生成的缓存与本地设置
+# ============================================================
+
+# 引擎生成目录
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# 编译产物
+*.VC.db
+*.opensdf
+*.sdf
+*.sln
+*.suo
+*.xcodeproj
+*.xcworkspace
+*.pdb
+
+# IDE / 编辑器本地设置
+.vs/
+.vscode/
+.idea/
+*.user
+*.userprefs
+
+# 本地自动备份
+*.autosave
+
+# 系统文件
+Thumbs.db
+desktop.ini
+.DS_Store
