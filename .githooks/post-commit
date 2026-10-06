@@ -1,0 +1,64 @@
+#!/bin/sh
+#
+# 自动版本号（post-commit 钩子）
+#
+# 每次提交后，基于仓库中已有的版本标签自动递增，并给本次提交打上注解标签。
+# 版本号规则：v主版本.次版本.修订号，例如 v0.1.0
+#
+# 递增规则（读取本次提交的说明文字）：
+#   含 BREAKING 或 [major]      -> 主版本 +1
+#   feat 开头，或含 [minor]     -> 次版本 +1
+#   其他                        -> 修订号 +1
+#
+# 手动指定幅度：  BUMP=major git commit -m "..."
+# 本次不打标签：  SKIP_VERSION_TAG=1 git commit -m "..."
+# 查看当前版本：  git describe --tags
+
+if [ "${SKIP_VERSION_TAG:-0}" = "1" ]; then
+    exit 0
+fi
+
+# HEAD 已经有标签时（amend、重跑钩子等）不重复打
+if git describe --tags --exact-match HEAD >/dev/null 2>&1; then
+    exit 0
+fi
+
+latest=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
+
+if [ -z "$latest" ]; then
+    major=0
+    minor=1
+    patch=0
+else
+    ver=${latest#v}
+    major=${ver%%.*}
+    rest=${ver#*.}
+    minor=${rest%%.*}
+    patch=${rest#*.}
+fi
+
+subject=$(git log -1 --pretty=%s)
+
+bump=${BUMP:-}
+if [ -z "$bump" ]; then
+    case "$subject" in
+        *BREAKING*|*"[major]"*) bump=major ;;
+        *"[minor]"*)            bump=minor ;;
+        feat*|feat:*|feat\(*)   bump=minor ;;
+        *)                      bump=patch ;;
+    esac
+fi
+
+case "$bump" in
+    major) major=$((major + 1)); minor=0; patch=0 ;;
+    minor) minor=$((minor + 1)); patch=0 ;;
+    *)     patch=$((patch + 1)) ;;
+esac
+
+new="v${major}.${minor}.${patch}"
+
+if git tag -a "$new" -m "$subject"; then
+    printf '[version] new tag: %s\n' "$new"
+else
+    printf '[version] failed to create tag %s\n' "$new" >&2
+fi
