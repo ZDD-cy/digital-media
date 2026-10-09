@@ -1,0 +1,42 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "1.0.1",
+  "FriendlyName": "Tripo API Unreal",
+  "Description": "Tripo API v3 text-to-model and image-to-model generation for Unreal Engine.",
+  "Category": "Other",
+  "CreatedBy": "TripoAI",
+  "CreatedByURL": "https://www.tripo3d.ai/",
+  "DocsURL": "",
+  "MarketplaceURL": "",
+  "SupportURL": "",
+  "CanContainContent": true,
+  "Modules": [
+    {
+      "Name": "Tripo3D",
+      "Type": "Runtime",
+      "LoadingPhase": "PreLoadingScreen"
+    },
+    {
+      "Name": "TripoRuntime",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    },
+    {
+      "Name": "TripoEditor",
+      "Type": "Editor",
+      "LoadingPhase": "Default"
+    }
+  ],
+  "Plugins": [
+    {
+      "Name": "ModelingToolsEditorMode",
+      "Enabled": true,
+      "TargetAllowList": [
+        "Editor"
+      ]
+    }
+  ],
+  "IsBetaVersion": false,
+  "IsExperimentalVersion": false
+}
