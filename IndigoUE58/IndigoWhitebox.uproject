@@ -1,0 +1,27 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{2EDAE91B-475A-2C35-B2CB-BDA8451402CB}",
+	"Category": "Games",
+	"Description": "Native Indigo Dyeing Whitebox",
+	"Modules": [
+		{
+			"Name": "IndigoWhitebox",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "PythonScriptPlugin",
+			"Enabled": true
+		},
+		{
+			"Name": "EditorScriptingUtilities",
+			"Enabled": true
+		},
+		{
+			"Name": "AndroidFileServer",
+			"Enabled": false
+		}
+	]
+}
