@@ -1,0 +1,51 @@
+Log file: C:\Users\ZDD\Documents\Codex\2026-10-14\ue\work\build-game.log
+Determining max actions to execute in parallel (16 physical cores, 24 logical cores)
+  Executing up to 16 processes, one per physical core
+  Requested 1.5 GB memory per action, 15.73 GB available: limiting max parallel actions to 10
+Creating makefile for IndigoValidation (no existing makefile)
+UbaSessionServer - Disable remote execution (remote sessions will finish current processes)
+UHT compiled-in object format Default
+Building IndigoValidation...
+===== Toolchain Information =====
+Using ISPC compiler (D:\language\UE_5.7\UE_5.8\Engine\Source\ThirdParty\Intel\ISPC\bin\Windows\ispc.exe)
+  Intel(r) Implicit SPMD Program Compiler (Intel(r) ISPC), 1.24.0 (build commit  @ 20250404, LLVM 18.1.2) 
+Using Visual Studio 14.44.35227 toolchain (C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207) and Windows 10.0.26100.0 SDK (C:\Program Files (x86)\Windows Kits\10).
+[Upgrade]
+[Upgrade] Using backward-compatible include order. The latest version of UE has changed the order of includes, which may require code changes. The current setting is:
+[Upgrade]     IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_6
+[Upgrade] Suppress this message by setting 'IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_8;' in IndigoValidation.Target.cs.
+[Upgrade] Alternatively you can set this to 'EngineIncludeOrderVersion.Latest' to always use the latest include order. This will potentially cause compile errors when integrating new versions of the engine.
+[Upgrade]
+[Adaptive Build] Excluded from IndigoInteraction unity file: IndigoDirector.cpp, IndigoFlowComponent.cpp, IndigoFlowTests.cpp, IndigoInteractable.cpp, IndigoModule.cpp, IndigoPlayerController.cpp
+=================================
+Using Unreal Build Accelerator local executor to run 18 action(s)
+  CPU 16 physical cores, 24 logical cores
+  Memory 15.73 GB physical, 23.36 GB/32.03 GB committed
+  UBA Storage capacity 40 GB
+[1/18] Copy d3d12SDKLayers.dll [NoUba]
+[2/18] Copy D3D12Core.dll [NoUba]
+[3/18] Copy tbbmalloc.dll [NoUba]
+[4/18] Copy tbb12.dll [NoUba]
+[5/18] Copy IndigoValidation-Default.rc2 [NoUba]
+[6/18] Copy DirectML.dll [NoUba]
+[7/18] Compile Resource [x64] IndigoValidation-Default.rc2 [NoUba]
+[8/18] Compile [x64] SharedPCH.Engine.Project.ValApi.ValExpApi.Cpp20.InclOrderUnreal5_6.cpp [NoUba]
+[9/18] Compile [x64] IndigoValidation.cpp [NoUba]
+[10/18] Compile [x64] IndigoDirector.cpp [NoUba]
+[11/18] Compile [x64] IndigoFlowComponent.cpp [NoUba]
+[12/18] Compile [x64] IndigoFlowTests.cpp [NoUba]
+[13/18] Compile [x64] IndigoInteractable.cpp [NoUba]
+[14/18] Compile [x64] IndigoModule.cpp [NoUba]
+[15/18] Compile [x64] IndigoPlayerController.cpp [NoUba]
+[16/18] Compile [x64] Module.IndigoInteraction.cpp [NoUba]
+[17/18] Link [x64] IndigoValidation.exe [NoUba]
+  ￕ�ￔￚﾴﾴﾽﾨ﾿￢ C:\Users\ZDD\Documents\Codex\2026-10-14\ue\work\Validation\Binaries\Win64\IndigoValidation.lib ﾺￍﾶￔￏ￳ C:\Users\ZDD\Documents\Codex\2026-10-14\ue\work\Validation\Binaries\Win64\IndigoValidation.exp
+[18/18] WriteMetadata IndigoValidation.target [NoUba]
+
+Some action result store tasks did not succeed
+Total time in Unreal Build Accelerator local executor: 45.68 seconds
+Output binary: C:\Users\ZDD\Documents\Codex\2026-10-14\ue\work\Validation\Binaries\Win64\IndigoValidation.exe
+
+Result: Succeeded
+Total execution time: 50.74 seconds
+Trace written to file C:\Users\ZDD\AppData\Local\Packages\sandbox.{09285eec-1e64-487f-b9f1-79c5d5c30962}\AC\UnrealBuildTool\Trace.uba with size 9.8kb

@@ -1,0 +1,13 @@
+Cue,VisualWork,AudioHook,Completion
+Fold,播放当前 FoldIndex 的预制折布形态,布料摩擦,本折完成
+PlaceCloth,布放到下版,布料落台,放置完成
+ClosePlate,上版对齐合上,木版轻合,合版完成
+ClampLeft,扣左夹,夹具扣合,扣紧完成
+ClampRight,扣右夹,夹具扣合,扣紧完成
+Dye,浸入提出滴水氧化显色并报告进度,入水滴水环境声,显色结束
+Wash,入清水,水声,清洗完成
+Drain,提出沥水,滴水,沥水完成
+UnclampLeft,松左夹,夹具松开,松夹完成
+UnclampRight,松右夹,夹具松开,松夹完成
+Unfold,展开本局作品,布料展开,展开演出完成
+Deliver,后页和寄件使用本局结果,项目自行接入,交付演出完成
