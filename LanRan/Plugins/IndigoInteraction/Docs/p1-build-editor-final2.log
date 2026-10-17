@@ -1,0 +1,81 @@
+Using bundled DotNet SDK version: 10.0 win-x64
+Running UnrealBuildTool: dotnet "..\..\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" IndigoValidationEditor Win64 Development -Project=C:/Users/ZDD/Documents/Codex/2026-10-14/ue/work/Validation/IndigoValidation.uproject -WaitMutex -NoHotReloadFromIDE -NoUBA
+Log file: C:\Users\ZDD\AppData\Local\UnrealBuildTool\Log.txt
+Determining max actions to execute in parallel (16 physical cores, 24 logical cores)
+  Executing up to 16 processes, one per physical core
+  Requested 1.5 GB memory per action, 15.73 GB available: limiting max parallel actions to 10
+UbaSessionServer - Disable remote execution (remote sessions will finish current processes)
+Building IndigoValidationEditor...
+===== Toolchain Information =====
+Using ISPC compiler (C:\Program Files\Epic Games\UE_5.8\Engine\Source\ThirdParty\Intel\ISPC\bin\Windows\ispc.exe)
+  Intel(r) Implicit SPMD Program Compiler (Intel(r) ISPC), 1.24.0 (build commit  @ 20250404, LLVM 18.1.2) 
+Using Visual Studio 14.44.35227 toolchain (C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207) and Windows 10.0.26100.0 SDK (C:\Program Files (x86)\Windows Kits\10).
+[Upgrade]
+[Upgrade] Using backward-compatible include order. The latest version of UE has changed the order of includes, which may require code changes. The current setting is:
+[Upgrade]     IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_6
+[Upgrade] Suppress this message by setting 'IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_8;' in IndigoValidationEditor.Target.cs.
+[Upgrade] Alternatively you can set this to 'EngineIncludeOrderVersion.Latest' to always use the latest include order. This will potentially cause compile errors when integrating new versions of the engine.
+[Upgrade]
+[Adaptive Build] Excluded from IndigoInteraction unity file: IndigoCraftHandle.cpp, IndigoCraftPreview.cpp, IndigoCraftTests.cpp, IndigoDirector.cpp, IndigoDyeTests.cpp, IndigoFinishTests.cpp, IndigoFlowComponent.cpp, IndigoFlowTests.cpp, IndigoInteractable.cpp, IndigoModule.cpp, IndigoPatternSource.cpp, IndigoPlayerController.cpp, IndigoTemperatureTests.cpp, IndigoWorkbenchBridge.cpp, IndigoWorkbenchTests.cpp, IndigoWorkbenchWidget.cpp
+=================================
+Using Unreal Build Accelerator local executor to run 4 action(s)
+  CPU 16 physical cores, 24 logical cores
+  Memory 15.73 GB physical, 31.6 GB/40.73 GB committed
+  UBA Storage capacity 40 GB
+[1/4] Compile [x64] IndigoCraftPreview.cpp [NoUba]
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(113,99): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+    if(TrialMaterial) TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FLinearColor(.8,.85,.76));
+                                                                                                  ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(113,95): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+    if(TrialMaterial) TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FLinearColor(.8,.85,.76));
+                                                                                              ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(113,92): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+    if(TrialMaterial) TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FLinearColor(.8,.85,.76));
+                                                                                           ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(148,125): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+    if(Cue==TEXT("ScoopTest") && TrialMaterial) TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FLinearColor(.8,.85,.76));
+                                                                                                                            ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(148,121): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+    if(Cue==TEXT("ScoopTest") && TrialMaterial) TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FLinearColor(.8,.85,.76));
+                                                                                                                        ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(148,118): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+    if(Cue==TEXT("ScoopTest") && TrialMaterial) TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FLinearColor(.8,.85,.76));
+                                                                                                                     ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(213,168): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+        TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FMath::Lerp(FLinearColor(.8,.85,.76),Flow->Temperature==EIndigoTemperature::Ready?FLinearColor(.065,.2,.44):FLinearColor(.48,.57,.53),Smooth));
+                                                                                                                                                                       ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(213,165): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+        TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FMath::Lerp(FLinearColor(.8,.85,.76),Flow->Temperature==EIndigoTemperature::Ready?FLinearColor(.065,.2,.44):FLinearColor(.48,.57,.53),Smooth));
+                                                                                                                                                                    ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(213,160): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+        TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FMath::Lerp(FLinearColor(.8,.85,.76),Flow->Temperature==EIndigoTemperature::Ready?FLinearColor(.065,.2,.44):FLinearColor(.48,.57,.53),Smooth));
+                                                                                                                                                               ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(213,194): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+        TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FMath::Lerp(FLinearColor(.8,.85,.76),Flow->Temperature==EIndigoTemperature::Ready?FLinearColor(.065,.2,.44):FLinearColor(.48,.57,.53),Smooth));
+                                                                                                                                                                                                 ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(213,190): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+        TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FMath::Lerp(FLinearColor(.8,.85,.76),Flow->Temperature==EIndigoTemperature::Ready?FLinearColor(.065,.2,.44):FLinearColor(.48,.57,.53),Smooth));
+                                                                                                                                                                                             ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(213,186): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+        TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FMath::Lerp(FLinearColor(.8,.85,.76),Flow->Temperature==EIndigoTemperature::Ready?FLinearColor(.065,.2,.44):FLinearColor(.48,.57,.53),Smooth));
+                                                                                                                                                                                         ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(213,97): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+        TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FMath::Lerp(FLinearColor(.8,.85,.76),Flow->Temperature==EIndigoTemperature::Ready?FLinearColor(.065,.2,.44):FLinearColor(.48,.57,.53),Smooth));
+                                                                                                ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(213,93): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+        TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FMath::Lerp(FLinearColor(.8,.85,.76),Flow->Temperature==EIndigoTemperature::Ready?FLinearColor(.065,.2,.44):FLinearColor(.48,.57,.53),Smooth));
+                                                                                            ^
+C:\Users\ZDD\Documents\Codex\2026-10-14\ue\outputs\IndigoInteraction\Source\IndigoInteraction\Private\IndigoCraftPreview.cpp(213,90): warning C4305: ﾡﾰﾲￎￊ�ﾡﾱ: ﾴￓﾡﾰdoubleﾡﾱﾵﾽﾡﾰfloatﾡﾱﾽ￘ﾶￏ
+        TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FMath::Lerp(FLinearColor(.8,.85,.76),Flow->Temperature==EIndigoTemperature::Ready?FLinearColor(.065,.2,.44):FLinearColor(.48,.57,.53),Smooth));
+                                                                                         ^
+[2/4] Link [x64] UnrealEditor-IndigoInteraction.lib [NoUba]
+  ￕ�ￔￚﾴﾴﾽﾨ﾿￢ C:/Users/ZDD/Documents/Codex/2026-10-14/ue/work/Validation/Intermediate/External/Build/Win64/x64/UnrealEditor/Development/IndigoInteraction/UnrealEditor-IndigoInteraction.lib ﾺￍﾶￔￏ￳ C:/Users/ZDD/Documents/Codex/2026-10-14/ue/work/Validation/Intermediate/External/Build/Win64/x64/UnrealEditor/Development/IndigoInteraction/UnrealEditor-IndigoInteraction.exp
+[3/4] Link [x64] UnrealEditor-IndigoInteraction.dll [NoUba]
+[4/4] WriteMetadata IndigoValidationEditor.target [NoUba]
+
+Total time in Unreal Build Accelerator local executor: 4.74 seconds
+Output binary: C:\Program Files\Epic Games\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe
+
+Result: Succeeded
+Total execution time: 6.07 seconds
+Trace written to file C:\Users\ZDD\AppData\Local\UnrealBuildTool\Trace.uba with size 3.9kb

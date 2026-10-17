@@ -26,7 +26,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo") bool bReturnToSource = true;
     UFUNCTION(BlueprintPure, Category="Indigo") bool IsAvailable(UIndigoFlowComponent* Flow) const;
     UFUNCTION(BlueprintPure, Category="Indigo") bool Accepts(AIndigoInteractable* Source, UIndigoFlowComponent* Flow) const;
-    UFUNCTION(BlueprintImplementableEvent, Category="Indigo") void SetHover(bool bHovered);
-    UFUNCTION(BlueprintImplementableEvent, Category="Indigo") void SetDropHighlight(bool bHighlighted);
-    UFUNCTION(BlueprintImplementableEvent, Category="Indigo") void InvalidDrop();
+    UFUNCTION(BlueprintNativeEvent, Category="Indigo") void SetHover(bool bHovered);
+    UFUNCTION(BlueprintNativeEvent, Category="Indigo") void SetDropHighlight(bool bHighlighted);
+    UFUNCTION(BlueprintNativeEvent, Category="Indigo") void InvalidDrop();
+    virtual void SetHover_Implementation(bool bHovered);
+    virtual void SetDropHighlight_Implementation(bool bHighlighted);
+    virtual void InvalidDrop_Implementation();
 };

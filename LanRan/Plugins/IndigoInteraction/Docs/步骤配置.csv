@@ -1,9 +1,11 @@
-State,Camera,DefaultSubtitle,Completion
+﻿State,Camera,DefaultSubtitle,Completion
 Receive,Table,先看看旧布角和委托单,两项查看
 Select,Table,拖花版到左右区域再确认,两侧非空且确认
+Trial,Closeup,舀液浸试布提出等待显色,冷缸试布后补温复试
 Fold,Closeup,沿当前折线叠布,逐折动画完成
 Clamp,Closeup,放布合版扣左右夹具,双侧夹紧
 Dye,Table,完成显色后继续或收工,至少一档且收工
 Wash,Closeup,清洗沥水松夹然后展开,展开动画完成
 Reveal,Quilt,看看自己的作品准备好了再交付,交付动画完成或回看返回
+Delivery,Quilt,读完委托人的心愿再寄件,阅读8秒且Ship完成
 End,Quilt,回看作品或重新开始,玩家选择

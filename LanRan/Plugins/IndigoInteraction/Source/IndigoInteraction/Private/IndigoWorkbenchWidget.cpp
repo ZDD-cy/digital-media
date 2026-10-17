@@ -33,12 +33,16 @@ void UIndigoWorkbenchWidget::NativeOnInitialized()
     };
     Title=AddText(TEXT("蓝染 · 选花版"),22);
     Status=AddText(TEXT(""),18); Help=AddText(TEXT(""),15);
+    Narrative=AddText(TEXT(""),18);
+    UHorizontalBox* CameraRow=WidgetTree->ConstructWidget<UHorizontalBox>(); Column->AddChildToVerticalBox(CameraRow);
     UHorizontalBox* Row1=WidgetTree->ConstructWidget<UHorizontalBox>(); Column->AddChildToVerticalBox(Row1);
     UHorizontalBox* Row2=WidgetTree->ConstructWidget<UHorizontalBox>(); Column->AddChildToVerticalBox(Row2);
     SelectionRow1=Row1; SelectionRow2=Row2;
     CraftRow1=WidgetTree->ConstructWidget<UHorizontalBox>(); Column->AddChildToVerticalBox(CraftRow1);
     CraftRow2=WidgetTree->ConstructWidget<UHorizontalBox>(); Column->AddChildToVerticalBox(CraftRow2);
     DyeRow=WidgetTree->ConstructWidget<UHorizontalBox>(); Column->AddChildToVerticalBox(DyeRow);
+    TrialRow=WidgetTree->ConstructWidget<UHorizontalBox>();Column->AddChildToVerticalBox(TrialRow);
+    FuelRow=WidgetTree->ConstructWidget<UHorizontalBox>();Column->AddChildToVerticalBox(FuelRow);
     WashRow1=WidgetTree->ConstructWidget<UHorizontalBox>(); Column->AddChildToVerticalBox(WashRow1);
     WashRow2=WidgetTree->ConstructWidget<UHorizontalBox>(); Column->AddChildToVerticalBox(WashRow2);
     ResultRow=WidgetTree->ConstructWidget<UHorizontalBox>(); Column->AddChildToVerticalBox(ResultRow);
@@ -51,6 +55,9 @@ void UIndigoWorkbenchWidget::NativeOnInitialized()
         Row->AddChildToHorizontalBox(B)->SetPadding(FMargin(3,8,3,0)); return B;
     };
     Cloth=Button(Row1,TEXT(" 查看布料 ")); Cloth->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnCloth);
+    TableCamera=Button(CameraRow,TEXT(" 工作台全景 "));TableCamera->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnTableCamera);
+    CloseupCamera=Button(CameraRow,TEXT(" 操作近景 "));CloseupCamera->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnCloseupCamera);
+    QuiltCamera=Button(CameraRow,TEXT(" 作品展示 "));QuiltCamera->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnQuiltCamera);
     Order=Button(Row1,TEXT(" 查看订单 ")); Order->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnOrder);
     Swap=Button(Row1,TEXT(" 左右交换 ")); Swap->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnSwap);
     ClearLeft=Button(Row2,TEXT(" 清空左槽 ")); ClearLeft->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnClearLeft);
@@ -63,6 +70,11 @@ void UIndigoWorkbenchWidget::NativeOnInitialized()
     ClampRight=Button(CraftRow2,TEXT(" 扣右夹具 ")); ClampRight->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnClampRight);
     Dye=Button(DyeRow,TEXT(" 浸染一档 / 继续染色 ")); Dye->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnDye);
     FinishDye=Button(DyeRow,TEXT(" 收工 ")); FinishDye->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnFinishDye);
+    ScoopTest=Button(TrialRow,TEXT(" 舀液 "));ScoopTest->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnScoopTest);
+    DipTest=Button(TrialRow,TEXT(" 浸试布 "));DipTest->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnDipTest);
+    LiftTest=Button(TrialRow,TEXT(" 提出 "));LiftTest->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnLiftTest);
+    OxidizeTest=Button(TrialRow,TEXT(" 等待显色 "));OxidizeTest->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnOxidizeTest);
+    AddFuel=Button(FuelRow,TEXT(" 添一份谷壳 "));AddFuel->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnAddFuel);
     Wash=Button(WashRow1,TEXT(" 清洗 ")); Wash->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnWash);
     Drain=Button(WashRow1,TEXT(" 提起沥水 ")); Drain->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnDrain);
     UnclampLeft=Button(WashRow2,TEXT(" 松左夹具 ")); UnclampLeft->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnUnclampLeft);
@@ -71,6 +83,7 @@ void UIndigoWorkbenchWidget::NativeOnInitialized()
     Deliver=Button(ResultRow,TEXT(" 交付作品 ")); Deliver->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnDeliver);
     Review=Button(ResultRow,TEXT(" 回看作品 ")); Review->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnReview);
     Back=Button(ResultRow,TEXT(" 返回完成页 ")); Back->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnBack);
+    Ship=Button(ResultRow,TEXT(" 读完了，叠布寄件 "));Ship->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnShip);
     Button(CommonRow,TEXT(" 重新开始 "))->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnRestart);
     Button(CommonRow,TEXT(" 返回行走 E "))->OnClicked.AddDynamic(this,&UIndigoWorkbenchWidget::OnExit);
     Hint=WidgetTree->ConstructWidget<UTextBlock>();Hint->SetText(FText::FromString(TEXT("按 E 开始制作")));
@@ -78,6 +91,12 @@ void UIndigoWorkbenchWidget::NativeOnInitialized()
     Hint->SetShadowOffset(FVector2D(2,2));Hint->SetShadowColorAndOpacity(FLinearColor::Black);
     UCanvasPanelSlot* HintSlot=Root->AddChildToCanvas(Hint);
     HintSlot->SetAnchors(FAnchors(.5f,.84f));HintSlot->SetAlignment(FVector2D(.5f,.5f));HintSlot->SetAutoSize(true);
+    SubtitlePanel=WidgetTree->ConstructWidget<UBorder>();SubtitlePanel->SetBrushColor(FLinearColor(.01f,.02f,.04f,.88f));SubtitlePanel->SetPadding(FMargin(18,12));
+    Subtitle=WidgetTree->ConstructWidget<UTextBlock>();Subtitle->SetWrapTextAt(650.f);
+    FSlateFontInfo SubtitleFont=Subtitle->GetFont();SubtitleFont.Size=20;Subtitle->SetFont(SubtitleFont);
+    Subtitle->SetJustification(ETextJustify::Center);SubtitlePanel->SetContent(Subtitle);
+    UCanvasPanelSlot* SubtitleSlot=Root->AddChildToCanvas(SubtitlePanel);
+    SubtitleSlot->SetAnchors(FAnchors(.5f,.96f));SubtitleSlot->SetAlignment(FVector2D(.5f,1.f));SubtitleSlot->SetAutoSize(true);
     Refresh();
 }
 bool UIndigoWorkbenchWidget::IsPointerOverPanel() const { return Panel && Panel->GetVisibility()==ESlateVisibility::Visible && Panel->IsHovered(); }
@@ -86,11 +105,15 @@ void UIndigoWorkbenchWidget::Refresh()
     if (!Panel || !Bridge) return;
     const bool Active=Bridge->bWorkbenchActive;
     Panel->SetVisibility(Active?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
+    SubtitlePanel->SetVisibility(Active && !Bridge->CurrentSubtitle.IsEmpty()?ESlateVisibility::HitTestInvisible:ESlateVisibility::Collapsed);
+    Subtitle->SetText(FText::Format(FText::FromString(TEXT("心声：{0}")),Bridge->CurrentSubtitle));
     Hint->SetVisibility(!Active && Bridge->IsPlayerNear()?ESlateVisibility::HitTestInvisible:ESlateVisibility::Collapsed);
     UIndigoFlowComponent* F=Bridge->GetFlow(); if (!Active || !F) return;
     const auto Pattern=[](EIndigoPattern P){return P==EIndigoPattern::A?TEXT("A"):P==EIndigoPattern::B?TEXT("B"):P==EIndigoPattern::C?TEXT("C"):TEXT("未选择");};
     Status->SetText(FText::FromString(FString::Printf(TEXT("左槽：%s     右槽：%s%s"),Pattern(F->Result.Left),Pattern(F->Result.Right),
-        F->Step==EIndigoStep::Dye || F->Step==EIndigoStep::Wash || F->Step==EIndigoStep::Reveal || F->Step==EIndigoStep::End?*FString::Printf(TEXT("\n染色深度：%d / 4 档"),F->Result.Depth):TEXT(""))));
+        F->Step==EIndigoStep::Dye || F->Step==EIndigoStep::Wash || F->Step==EIndigoStep::Reveal || F->Step==EIndigoStep::End || F->Step==EIndigoStep::Delivery?*FString::Printf(TEXT("\n染色深度：%d / 4 档"),F->Result.Depth):TEXT(""))));
+    if(F->bEnableTemperatureRules && (F->Step==EIndigoStep::Trial || F->Step==EIndigoStep::Dye))
+        Status->SetText(FText::FromString(Status->GetText().ToString()+FString::Printf(TEXT("\n缸温：%s  谷壳：%d / 5 份"),F->Temperature==EIndigoTemperature::Ready?TEXT("可入染"):TEXT("偏冷"),F->Fuel)));
     const bool Selection=F->Step==EIndigoStep::Receive || F->Step==EIndigoStep::Select;
     const bool Craft=F->Step==EIndigoStep::Fold || F->Step==EIndigoStep::Clamp;
     SelectionRow1->SetVisibility(Selection?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
@@ -98,28 +121,40 @@ void UIndigoWorkbenchWidget::Refresh()
     CraftRow1->SetVisibility(Craft?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
     CraftRow2->SetVisibility(Craft?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
     DyeRow->SetVisibility(F->Step==EIndigoStep::Dye?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
+    TrialRow->SetVisibility(F->Step==EIndigoStep::Trial?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
+    FuelRow->SetVisibility(F->bEnableTemperatureRules && (F->Step==EIndigoStep::Trial || (F->Step==EIndigoStep::Dye && F->Result.Depth<4))?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
     WashRow1->SetVisibility(F->Step==EIndigoStep::Wash?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
     WashRow2->SetVisibility(F->Step==EIndigoStep::Wash?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
-    const bool Final=F->Step==EIndigoStep::Reveal || F->Step==EIndigoStep::End;
+    const bool Final=F->Step==EIndigoStep::Reveal || F->Step==EIndigoStep::End || F->Step==EIndigoStep::Delivery;
     ResultRow->SetVisibility(Final?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
     Deliver->SetVisibility(F->Step==EIndigoStep::Reveal && !F->IsReview()?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
     Review->SetVisibility(F->Step==EIndigoStep::End?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
     Back->SetVisibility(F->IsReview()?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
-    Title->SetText(FText::FromString(Selection?TEXT("蓝染 · 选花版"):F->Step==EIndigoStep::Fold?TEXT("蓝染 · 折布"):F->Step==EIndigoStep::Clamp?TEXT("蓝染 · 合版扣夹"):TEXT("蓝染 · 制作")));
+    Ship->SetVisibility(F->Step==EIndigoStep::Delivery?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
+    Narrative->SetVisibility((Selection && F->HasSeenOrder()) || F->Step==EIndigoStep::Delivery?ESlateVisibility::Visible:ESlateVisibility::Collapsed);
+    Narrative->SetText(F->Step==EIndigoStep::Delivery?FText::Format(FText::FromString(TEXT("委托单背面\n{0}\n\n{1}")),F->OrderBack,F->ShippingText):FText::Format(FText::FromString(TEXT("委托单正面\n{0}")),F->OrderFront));
+    Title->SetText(FText::FromString(Selection?TEXT("蓝染 · 选花版"):F->Step==EIndigoStep::Trial?TEXT("蓝染 · 试布查温"):F->Step==EIndigoStep::Delivery?TEXT("蓝染 · 委托与寄件"):F->Step==EIndigoStep::Fold?TEXT("蓝染 · 折布"):F->Step==EIndigoStep::Clamp?TEXT("蓝染 · 合版扣夹"):F->Step==EIndigoStep::Wash?TEXT("蓝染 · 清洗拆版"):F->Step==EIndigoStep::Reveal?TEXT("蓝染 · 作品展示"):F->Step==EIndigoStep::End?TEXT("蓝染 · 制作完成"):TEXT("蓝染 · 染色")));
+    TableCamera->SetIsEnabled(Bridge->CanSwitchWorkbenchCamera(EIndigoCamera::Table));
+    CloseupCamera->SetIsEnabled(Bridge->CanSwitchWorkbenchCamera(EIndigoCamera::Closeup));
+    QuiltCamera->SetIsEnabled(Bridge->CanSwitchWorkbenchCamera(EIndigoCamera::Quilt));
     FString Instruction;
     switch(F->Step)
     {
     case EIndigoStep::Receive: Instruction=TEXT("先查看布料和订单，然后选择花版。"); break;
     case EIndigoStep::Select: Instruction=TEXT("将 A/B/C 拖到左右板子；可重复选同款。\n右键取消拖动，按 E 退出。"); break;
+    case EIndigoStep::Trial:
+        Instruction=F->bAnimationBusy?TEXT("动作进行中，请等试布或补温完成……"):
+            F->bColdTrialSeen && F->Temperature==EIndigoTemperature::Cold?TEXT("冷缸试布显色偏淡。添一份谷壳补温，再按顺序复试。"):
+            TEXT("按顺序舀液、浸试布、提出、等待显色。\n试布只帮助观察，不影响成品深度。");break;
     case EIndigoStep::Fold:
-        Instruction=FString::Printf(TEXT("折布：已完成 %d / %d 折。\n%s\n当前使用演示布料与夹具。"),F->FoldIndex,F->FoldCount,F->bAnimationBusy?TEXT("正在折布，请等动作结束……"):TEXT("点击“沿当前折线折布”，依次完成三折。")); break;
+        Instruction=FString::Printf(TEXT("折布：已完成 %d / %d 折。\n%s"),F->FoldIndex,F->FoldCount,F->bAnimationBusy?TEXT("正在折布，请等动作结束……"):TEXT("拖动蓝色布角到绿色折线，依次完成三折。也可点击折布按钮。")); break;
     case EIndigoStep::Clamp:
         Instruction=F->bAnimationBusy?TEXT("动作进行中，请等动作结束……"):F->CanPerform(EIndigoAction::PlaceCloth)?TEXT("三折完成，将布放到下木版上。"):F->CanPerform(EIndigoAction::ClosePlate)?TEXT("布已放好，合上木版。"):TEXT("木版已合上，分别扣紧左右夹具。\n已扣好的夹具不能重复操作。"); break;
     case EIndigoStep::Dye:
         Instruction=F->bAnimationBusy?TEXT("浸染与出缸显色中，请等整段动作结束……\n完成后才计入一档，不可连点跳过。"):
             F->Result.Depth==0?TEXT("左右夹具已扣紧，开始第一档浸染。\n至少完成一档才能收工，最多四档。"):
-            F->Result.Depth==4?TEXT("已到第四档，请点击收工。\n下方色样为深度预览，当前使用演示染缸。"):
-            TEXT("本档已完成。可继续加深，或点击收工。\n下方色样为深度预览，当前使用演示染缸。"); break;
+            F->Result.Depth==4?TEXT("已到第四档，请点击收工。"):
+            TEXT("本档已完成。可继续加深，或点击收工。\n下方色样显示当前深度。"); break;
     case EIndigoStep::Wash:
         Instruction=F->bAnimationBusy?TEXT("动作进行中，请等结束……"):
             F->CanPerform(EIndigoAction::Wash)?TEXT("先清洗夹版中的染布，再提起沥水。"):
@@ -128,11 +163,16 @@ void UIndigoWorkbenchWidget::Refresh()
             TEXT("沥水完成，松开左右夹具，顺序不限。"); break;
     case EIndigoStep::Reveal: Instruction=F->bAnimationBusy?TEXT("正在交付作品……"):
         F->IsReview()?TEXT("回看本局作品，花版与深度保持不变。"):
-        TEXT("作品已展开，可停留欣赏，再点击交付。\n当前为几何纹样演示，正式花纹待替换。"); break;
+        TEXT("作品已展开。可以停留欣赏，准备好后再点击交付。"); break;
     case EIndigoStep::End: Instruction=TEXT("本次制作完成。可回看作品或重新开始。"); break;
+    case EIndigoStep::Delivery: Instruction=F->bAnimationBusy?TEXT("正在叠好本局作品并寄出……"):
+        F->GetDeliveryReadingRemaining()>0.f?TEXT("读一读委托人的心愿，稍后可以叠布寄件。"):
+        TEXT("读完后点击叠布寄件，寄出的是本局作品。");break;
     default: Instruction=TEXT("按 E 返回第一人称。"); break;
     }
     Help->SetText(FText::FromString(Instruction));
+    if(F->Step==EIndigoStep::Dye && !F->bAnimationBusy && F->bEnableTemperatureRules && F->Temperature==EIndigoTemperature::Cold && F->Result.Depth<4)
+        Help->SetText(FText::FromString(F->Result.Depth>0?TEXT("缸温偏冷。继续染前需添一份谷壳补温；也可以直接收工。"):TEXT("缸温偏冷，先添一份谷壳，补温后才能入染。")));
     Cloth->SetIsEnabled(F->CanPerform(EIndigoAction::InspectCloth)); Order->SetIsEnabled(F->CanPerform(EIndigoAction::InspectOrder));
     Swap->SetIsEnabled(F->CanPerform(EIndigoAction::Swap)); ClearLeft->SetIsEnabled(F->CanPerform(EIndigoAction::ClearLeft));
     ClearRight->SetIsEnabled(F->CanPerform(EIndigoAction::ClearRight));Confirm->SetIsEnabled(F->CanPerform(EIndigoAction::Confirm));
@@ -140,10 +180,14 @@ void UIndigoWorkbenchWidget::Refresh()
     Place->SetIsEnabled(F->CanPerform(EIndigoAction::PlaceCloth)); Close->SetIsEnabled(F->CanPerform(EIndigoAction::ClosePlate));
     ClampLeft->SetIsEnabled(F->CanPerform(EIndigoAction::ClampLeft)); ClampRight->SetIsEnabled(F->CanPerform(EIndigoAction::ClampRight));
     Dye->SetIsEnabled(F->CanPerform(EIndigoAction::Dye)); FinishDye->SetIsEnabled(F->CanPerform(EIndigoAction::FinishDye));
+    Dye->SetVisibility(F->Result.Depth>=4?ESlateVisibility::Collapsed:ESlateVisibility::Visible);
     Wash->SetIsEnabled(F->CanPerform(EIndigoAction::Wash)); Drain->SetIsEnabled(F->CanPerform(EIndigoAction::Drain));
     UnclampLeft->SetIsEnabled(F->CanPerform(EIndigoAction::UnclampLeft)); UnclampRight->SetIsEnabled(F->CanPerform(EIndigoAction::UnclampRight));
     Unfold->SetIsEnabled(F->CanPerform(EIndigoAction::Unfold)); Deliver->SetIsEnabled(F->CanPerform(EIndigoAction::Deliver));
     Review->SetIsEnabled(F->CanPerform(EIndigoAction::Review)); Back->SetIsEnabled(F->CanPerform(EIndigoAction::Back));
+    ScoopTest->SetIsEnabled(F->CanPerform(EIndigoAction::ScoopTest));DipTest->SetIsEnabled(F->CanPerform(EIndigoAction::DipTest));
+    LiftTest->SetIsEnabled(F->CanPerform(EIndigoAction::LiftTest));OxidizeTest->SetIsEnabled(F->CanPerform(EIndigoAction::OxidizeTest));
+    AddFuel->SetIsEnabled(F->CanPerform(EIndigoAction::AddFuel));Ship->SetIsEnabled(F->CanPerform(EIndigoAction::Ship));
 }
 void UIndigoWorkbenchWidget::OnCloth(){if(Bridge)Bridge->PerformAction(EIndigoAction::InspectCloth);}
 void UIndigoWorkbenchWidget::OnOrder(){if(Bridge)Bridge->PerformAction(EIndigoAction::InspectOrder);}
@@ -168,6 +212,15 @@ void UIndigoWorkbenchWidget::OnUnfold(){if(Bridge)Bridge->PerformAction(EIndigoA
 void UIndigoWorkbenchWidget::OnDeliver(){if(Bridge)Bridge->PerformAction(EIndigoAction::Deliver);}
 void UIndigoWorkbenchWidget::OnReview(){if(Bridge)Bridge->PerformAction(EIndigoAction::Review);}
 void UIndigoWorkbenchWidget::OnBack(){if(Bridge)Bridge->PerformAction(EIndigoAction::Back);}
+void UIndigoWorkbenchWidget::OnTableCamera(){if(Bridge)Bridge->SwitchWorkbenchCamera(EIndigoCamera::Table);}
+void UIndigoWorkbenchWidget::OnCloseupCamera(){if(Bridge)Bridge->SwitchWorkbenchCamera(EIndigoCamera::Closeup);}
+void UIndigoWorkbenchWidget::OnQuiltCamera(){if(Bridge)Bridge->SwitchWorkbenchCamera(EIndigoCamera::Quilt);}
+void UIndigoWorkbenchWidget::OnScoopTest(){if(Bridge)Bridge->PerformAction(EIndigoAction::ScoopTest);}
+void UIndigoWorkbenchWidget::OnDipTest(){if(Bridge)Bridge->PerformAction(EIndigoAction::DipTest);}
+void UIndigoWorkbenchWidget::OnLiftTest(){if(Bridge)Bridge->PerformAction(EIndigoAction::LiftTest);}
+void UIndigoWorkbenchWidget::OnOxidizeTest(){if(Bridge)Bridge->PerformAction(EIndigoAction::OxidizeTest);}
+void UIndigoWorkbenchWidget::OnAddFuel(){if(Bridge)Bridge->PerformAction(EIndigoAction::AddFuel);}
+void UIndigoWorkbenchWidget::OnShip(){if(Bridge)Bridge->PerformAction(EIndigoAction::Ship);}
 
 FReply UIndigoWorkbenchWidget::NativeOnMouseButtonDown(const FGeometry& Geometry,const FPointerEvent& Event)
 {

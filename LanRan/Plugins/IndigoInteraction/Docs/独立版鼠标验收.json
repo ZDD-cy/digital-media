@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-17",
+  "engine": "5.8.3",
+  "plugin_version": "2.0.0",
+  "environment": "Standalone Win64 Development packaged LanRan.exe",
+  "input": "E key and physical mouse clicks/drags; no console or state shortcuts",
+  "result": "passed",
+  "selection": [
+    "A",
+    "A"
+  ],
+  "depth": 1,
+  "fuel_after_warming": 4,
+  "verified": [
+    "Enter and exit first-person workbench mode",
+    "Inspect cloth and order",
+    "Invalid selection drop returns to source; target hint appears",
+    "A/A selection confirmation",
+    "Cold trial four actions; warm with fuel; repeat trial",
+    "Three sequential fold drags",
+    "Place cloth drag",
+    "Upper plate closing drag",
+    "Left and right clamp drags",
+    "One dye segment; cold state retains depth and permits finish",
+    "Wash, drain, release both clamps, unfold",
+    "Reveal and delivery",
+    "Order reverse reading delay gates shipping",
+    "Ship to end",
+    "Review same work and return to end",
+    "Restart restores Receive and empty slots"
+  ],
+  "final_state": "Receive, empty Left/Right selection, restored props",
+  "scope_notes": [
+    "Four-depth full round verified separately in PIE",
+    "Existing demo geometry/material used; no new patterns generated",
+    "Formal sound assets absent; hooks retained",
+    "Regional videos intentionally left empty per user"
+  ]
+}

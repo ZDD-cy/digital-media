@@ -1,0 +1,23 @@
+{
+  "runs": [
+    {
+      "depth": 1,
+      "fuel": 4,
+      "left": "<IndigoPattern.A: 1>",
+      "right": "<IndigoPattern.A: 1>",
+      "camera": "Quilt",
+      "drag_folds_and_clamps": true
+    },
+    {
+      "depth": 4,
+      "fuel": 1,
+      "left": "<IndigoPattern.A: 1>",
+      "right": "<IndigoPattern.B: 2>",
+      "camera": "Quilt",
+      "drag_folds_and_clamps": true
+    }
+  ],
+  "checks": [],
+  "success": true,
+  "manual_ready": "Receive (reset verified visually)"
+}

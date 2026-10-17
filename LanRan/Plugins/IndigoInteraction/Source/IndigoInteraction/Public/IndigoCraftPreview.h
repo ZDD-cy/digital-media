@@ -8,6 +8,7 @@ class UIndigoFlowComponent;
 class UStaticMeshComponent;
 class USceneComponent;
 class UMaterialInstanceDynamic;
+class AIndigoCraftHandle;
 
 // Replaceable blockout rig. Its own completed motion returns the original flow token.
 UCLASS(Blueprintable)
@@ -32,6 +33,8 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") TObjectPtr<UStaticMeshComponent> DyeSwatch;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") TObjectPtr<UStaticMeshComponent> WashBasin;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") TObjectPtr<UStaticMeshComponent> WashWater;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo|P1") TObjectPtr<UStaticMeshComponent> TrialCloth;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo|P1") TArray<TObjectPtr<UStaticMeshComponent>> FuelMarkers;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") bool bUnfolded = false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") FIndigoResult DisplayedResult;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") int32 PreviewDepth = 0;
@@ -48,11 +51,14 @@ public:
     virtual void ShowFinalQuilt_Implementation(const FIndigoResult& Result) override;
 protected:
     virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 private:
     UPROPERTY() TObjectPtr<USceneComponent> FoldPivot;
     UPROPERTY() TObjectPtr<USceneComponent> PlatePivot;
     UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> ClothMaterial;
     UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> SwatchMaterial;
+    UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> TrialMaterial;
+    UPROPERTY(Transient) TArray<TObjectPtr<AIndigoCraftHandle>> Handles;
     TArray<FVector> DyeStartLocations;
     FVector ClothCenter;
     FVector ClothSize;
@@ -66,4 +72,5 @@ private:
     void ApplyMotion(float T);
     void FinishMotion();
     TArray<USceneComponent*> DyeParts() const;
+    void UpdateHandles();
 };

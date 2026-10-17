@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "succeeded": 6,
+  "failed": 0,
+  "tests": [
+    {
+      "name": "Indigo.Flow.GuardsAndReplay",
+      "state": "Success"
+    },
+    {
+      "name": "Indigo.P1.TrialFuelAndDelivery",
+      "state": "Success"
+    },
+    {
+      "name": "Indigo.Workbench.CraftCallbacks",
+      "state": "Success"
+    },
+    {
+      "name": "Indigo.Workbench.DyeDepthCallbacks",
+      "state": "Success"
+    },
+    {
+      "name": "Indigo.Workbench.SelectionGuards",
+      "state": "Success"
+    },
+    {
+      "name": "Indigo.Workbench.WashRevealCallbacks",
+      "state": "Success"
+    }
+  ]
+}

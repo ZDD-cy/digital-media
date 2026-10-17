@@ -1,4 +1,4 @@
-Cue,VisualWork,AudioHook,Completion
+﻿Cue,VisualWork,AudioHook,Completion
 Fold,播放当前 FoldIndex 的预制折布形态,布料摩擦,本折完成
 PlaceCloth,布放到下版,布料落台,放置完成
 ClosePlate,上版对齐合上,木版轻合,合版完成
@@ -10,4 +10,12 @@ Drain,提出沥水,滴水,沥水完成
 UnclampLeft,松左夹,夹具松开,松夹完成
 UnclampRight,松右夹,夹具松开,松夹完成
 Unfold,展开本局作品,布料展开,展开演出完成
-Deliver,后页和寄件使用本局结果,项目自行接入,交付演出完成
+Deliver,显示委托背面和本局作品,未提供音效,阅读8秒后开放Ship
+ScoopTest,试布舀液,未提供音效,动作完成
+DipTest,试布浸入,未提供音效,动作完成
+LiftTest,试布提出,未提供音效,动作完成
+OxidizeTest,Cold与Ready显色对比,未提供音效,显色完成
+AddFuel,移动一份谷壳补温,未提供音效,完成后Ready
+Ship,折叠移动本局作品,未提供音效,进入End
+RegionalClip1,留空由其他成员提供,无资源,不参与当前推进
+RegionalClip2,留空由其他成员提供,无资源,不参与当前推进

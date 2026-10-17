@@ -5,14 +5,16 @@
 UENUM(BlueprintType)
 enum class EIndigoPattern : uint8 { None, A, B, C };
 UENUM(BlueprintType)
-enum class EIndigoStep : uint8 { Receive, Select, Fold, Clamp, Dye, Wash, Reveal, End };
+enum class EIndigoStep : uint8 { Receive, Select, Fold, Clamp, Dye, Wash, Reveal, End, Trial, Delivery };
+UENUM(BlueprintType)
+enum class EIndigoTemperature : uint8 { Cold, Ready };
 UENUM(BlueprintType)
 enum class EIndigoAction : uint8
 {
     InspectCloth, InspectOrder, Swap, ClearLeft, ClearRight, Confirm,
     Fold, PlaceCloth, ClosePlate, ClampLeft, ClampRight,
     Dye, FinishDye, Wash, Drain, UnclampLeft, UnclampRight, Unfold,
-    Deliver, Review, Back
+    Deliver, Review, Back, ScoopTest, DipTest, LiftTest, OxidizeTest, AddFuel, Ship
 };
 UENUM(BlueprintType)
 enum class EIndigoCamera : uint8 { Table, Closeup, Quilt };

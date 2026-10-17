@@ -1,7 +1,7 @@
 {
   "FileVersion": 3,
-  "Version": 5,
-  "VersionName": "1.4.0",
+  "Version": 7,
+  "VersionName": "2.0.0",
   "FriendlyName": "Indigo Interaction",
   "Description": "Fixed cameras, mouse drag/drop, first-person workbench, fold/clamp and dye depth previews, P0 flow and Blueprint animation hooks.",
   "Category": "Gameplay",

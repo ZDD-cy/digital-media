@@ -24,6 +24,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo", meta=(ClampMin="0")) float CameraBlendSeconds = 0.25f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|Debug") bool bDebugPointer = false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") bool bWorkbenchActive = false;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo|Camera") EIndigoCamera ActiveCamera = EIndigoCamera::Table;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo|Subtitle") FText CurrentSubtitle;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|Subtitle", meta=(ClampMin="0")) float SubtitleMinimumSeconds = 2.5f;
     UFUNCTION(BlueprintPure, Category="Indigo") bool IsPlayerNear() const;
     UFUNCTION(BlueprintCallable, Category="Indigo") bool EnterWorkbench();
     UFUNCTION(BlueprintCallable, Category="Indigo") void LeaveWorkbench();
@@ -32,6 +35,8 @@ public:
     UFUNCTION(BlueprintCallable, Category="Indigo") bool PerformAction(EIndigoAction Action, int32 Index = 0);
     UFUNCTION(BlueprintCallable, Category="Indigo") void RestartWorkbench();
     UFUNCTION(BlueprintPure, Category="Indigo") UIndigoFlowComponent* GetFlow() const;
+    UFUNCTION(BlueprintPure, Category="Indigo|Camera") bool CanSwitchWorkbenchCamera(EIndigoCamera Camera) const;
+    UFUNCTION(BlueprintCallable, Category="Indigo|Camera") bool SwitchWorkbenchCamera(EIndigoCamera Camera);
     bool PointerDown(FVector2D Position);
     void PointerMove(FVector2D Position);
     void PointerUp(FVector2D Position);
@@ -53,6 +58,13 @@ private:
     bool bEventPointer = false;
     FVector2D EventPosition = FVector2D::ZeroVector;
     float BlendRemaining = 0.f;
+    float SubtitleRemaining = 0.f;
+    FText PendingSubtitle;
+    TWeakObjectPtr<ACameraActor> CurrentCamera;
+    ACameraActor* ResolveCamera(EIndigoCamera Camera) const;
+    void ApplyCamera(EIndigoCamera Camera, bool bForce = false);
+    UFUNCTION() void HandleStep(EIndigoStep Step);
+    UFUNCTION() void HandleSubtitle(FText Text);
     AIndigoInteractable* TracePointer(bool bIgnorePressed = false) const;
     bool OnPlane(FVector& Point) const;
     void Press();

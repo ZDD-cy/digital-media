@@ -1,6 +1,9 @@
 #include "IndigoInteractable.h"
 #include "IndigoFlowComponent.h"
 #include "Components/BoxComponent.h"
+void AIndigoInteractable::SetHover_Implementation(bool Value) { HitBox->SetHiddenInGame(!Value); }
+void AIndigoInteractable::SetDropHighlight_Implementation(bool Value) { HitBox->SetHiddenInGame(!Value); }
+void AIndigoInteractable::InvalidDrop_Implementation() {}
 
 AIndigoInteractable::AIndigoInteractable()
 {
