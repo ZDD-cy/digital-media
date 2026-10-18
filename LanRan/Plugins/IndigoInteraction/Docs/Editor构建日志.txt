@@ -1,0 +1,50 @@
+Log file: C:\Users\ZDD\Documents\Codex\2026-10-14\ue\work\build.log
+Determining max actions to execute in parallel (16 physical cores, 24 logical cores)
+  Executing up to 16 processes, one per physical core
+  Requested 1.5 GB memory per action, 15.73 GB available: limiting max parallel actions to 10
+UbaSessionServer - Disable remote execution (remote sessions will finish current processes)
+Creating makefile for IndigoValidationEditor (command line arguments changed)
+Building IndigoValidationEditor...
+===== Toolchain Information =====
+Using ISPC compiler (D:\language\UE_5.7\UE_5.8\Engine\Source\ThirdParty\Intel\ISPC\bin\Windows\ispc.exe)
+  Intel(r) Implicit SPMD Program Compiler (Intel(r) ISPC), 1.24.0 (build commit  @ 20250404, LLVM 18.1.2) 
+Using Visual Studio 14.44.35227 toolchain (C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207) and Windows 10.0.26100.0 SDK (C:\Program Files (x86)\Windows Kits\10).
+[Upgrade]
+[Upgrade] Using backward-compatible include order. The latest version of UE has changed the order of includes, which may require code changes. The current setting is:
+[Upgrade]     IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_6
+[Upgrade] Suppress this message by setting 'IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_8;' in IndigoValidationEditor.Target.cs.
+[Upgrade] Alternatively you can set this to 'EngineIncludeOrderVersion.Latest' to always use the latest include order. This will potentially cause compile errors when integrating new versions of the engine.
+[Upgrade]
+[Adaptive Build] Excluded from IndigoInteraction unity file: IndigoDirector.cpp, IndigoFlowComponent.cpp, IndigoFlowTests.cpp, IndigoInteractable.cpp, IndigoModule.cpp, IndigoPlayerController.cpp
+=================================
+Using Unreal Build Accelerator local executor to run 17 action(s)
+  CPU 16 physical cores, 24 logical cores
+  Memory 15.73 GB physical, 23.49 GB/32.03 GB committed
+  UBA Storage capacity 40 GB
+[1/17] Compile Resource [x64] Default.rc2 [NoUba]
+[2/17] Compile Resource [x64] Default.rc2 [NoUba]
+[3/17] Compile [x64] SharedPCH.UnrealEd.Project.ValApi.ValExpApi.Cpp20.InclOrderUnreal5_6.cpp [NoUba]
+[4/17] Compile [x64] IndigoDirector.cpp [NoUba]
+[5/17] Compile [x64] IndigoFlowComponent.cpp [NoUba]
+[6/17] Compile [x64] IndigoFlowTests.cpp [NoUba]
+[7/17] Compile [x64] IndigoInteractable.cpp [NoUba]
+[8/17] Compile [x64] IndigoModule.cpp [NoUba]
+[9/17] Compile [x64] IndigoPlayerController.cpp [NoUba]
+[10/17] Compile [x64] Module.IndigoInteraction.cpp [NoUba]
+[11/17] Link [x64] UnrealEditor-IndigoInteraction.lib [NoUba]
+  ￕ�ￔￚﾴﾴﾽﾨ﾿￢ C:/Users/ZDD/Documents/Codex/2026-10-14/ue/work/Validation/Intermediate/External/Build/Win64/x64/UnrealEditor/Development/IndigoInteraction/UnrealEditor-IndigoInteraction.lib ﾺￍﾶￔￏ￳ C:/Users/ZDD/Documents/Codex/2026-10-14/ue/work/Validation/Intermediate/External/Build/Win64/x64/UnrealEditor/Development/IndigoInteraction/UnrealEditor-IndigoInteraction.exp
+[12/17] Compile [x64] IndigoValidation.cpp [NoUba]
+[13/17] Compile [x64] PerModuleInline.gen.cpp [NoUba]
+[14/17] Link [x64] UnrealEditor-IndigoValidation.lib [NoUba]
+  ￕ�ￔￚﾴﾴﾽﾨ﾿￢ C:/Users/ZDD/Documents/Codex/2026-10-14/ue/work/Validation/Intermediate/Build/Win64/x64/UnrealEditor/Development/IndigoValidation/UnrealEditor-IndigoValidation.lib ﾺￍﾶￔￏ￳ C:/Users/ZDD/Documents/Codex/2026-10-14/ue/work/Validation/Intermediate/Build/Win64/x64/UnrealEditor/Development/IndigoValidation/UnrealEditor-IndigoValidation.exp
+[15/17] Link [x64] UnrealEditor-IndigoInteraction.dll [NoUba]
+[16/17] Link [x64] UnrealEditor-IndigoValidation.dll [NoUba]
+[17/17] WriteMetadata IndigoValidationEditor.target [NoUba]
+
+Some action result store tasks did not succeed
+Total time in Unreal Build Accelerator local executor: 47.76 seconds
+Output binary: D:\language\UE_5.7\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe
+
+Result: Succeeded
+Total execution time: 50.59 seconds
+Trace written to file C:\Users\ZDD\AppData\Local\Packages\sandbox.{95af3614-c5af-47ff-ba3b-4732f19a5e4f}\AC\UnrealBuildTool\Trace.uba with size 9.6kb
