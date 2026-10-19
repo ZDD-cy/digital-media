@@ -1,26 +1,33 @@
 {
-  "FileVersion": 3,
-  "EngineAssociation": "5.8",
-  "Category": "",
-  "Description": "",
-  "Plugins": [
-    {
-      "Name": "ModelingToolsEditorMode",
-      "Enabled": true,
-      "TargetAllowList": [
-        "Editor"
-      ]
-    },
-    {
-      "Name": "IndigoInteraction",
-      "Enabled": true
-    }
-  ],
-  "Modules": [
-    {
-      "Name": "LanRan",
-      "Type": "Runtime",
-      "LoadingPhase": "Default"
-    }
-  ]
+	"FileVersion": 3,
+	"EngineAssociation": "5.8",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "LanRan",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "ModelingToolsEditorMode",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
+		},
+		{
+			"Name": "IndigoInteraction",
+			"Enabled": true
+		},
+		{
+			"Name": "Tripo3DUEBridge",
+			"Enabled": true,
+			"SupportedTargetPlatforms": [
+				"Win64"
+			]
+		}
+	]
 }
