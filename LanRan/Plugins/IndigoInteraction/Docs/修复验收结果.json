@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-19",
+  "version": "2.1.0",
+  "engine": "5.8.3",
+  "automation": {
+    "succeeded": 7,
+    "failed": 0,
+    "tests": [
+      {
+        "name": "Indigo.Flow.GuardsAndReplay",
+        "state": "Success"
+      },
+      {
+        "name": "Indigo.P1.TrialFuelAndDelivery",
+        "state": "Success"
+      },
+      {
+        "name": "Indigo.Workbench.CraftCallbacks",
+        "state": "Success"
+      },
+      {
+        "name": "Indigo.Workbench.DyeDepthCallbacks",
+        "state": "Success"
+      },
+      {
+        "name": "Indigo.Workbench.SelectionGuards",
+        "state": "Success"
+      },
+      {
+        "name": "Indigo.Workbench.SlotFollowsVisual",
+        "state": "Success"
+      },
+      {
+        "name": "Indigo.Workbench.WashRevealCallbacks",
+        "state": "Success"
+      }
+    ]
+  },
+  "scene": {
+    "success": true,
+    "terrain_count": 1,
+    "texture_bindings": 45,
+    "slot_centers": "both match visible mesh bounds",
+    "opening_video_source": null,
+    "selection_and_craft_tables": "present and stage visibility configured"
+  },
+  "builds": {
+    "editor": "Succeeded",
+    "windows_package": "BUILD SUCCESSFUL"
+  },
+  "manual_checks": {
+    "restored_terrain": "visible in independent Windows package",
+    "AB_selection": "A to visible left board and B to visible right board accepted using physical mouse in rendered game",
+    "trial_visibility": "basin, cloth and fuel visible after table adjustment",
+    "opening_picture": "technical AVI displayed in native full-screen widget in separate validation map",
+    "opening_skip": "clicked Skip before end; video and button removed, gameplay E prompt returned; mouse input mode restored in runtime log",
+    "opening_natural_end": "35-second and 120-second technical media ended and input mode returned to game"
+  },
+  "limits": [
+    "Formal opening movie absent; production level VideoSource is None",
+    "No claim of a new complete 2.1.0 round; earlier 2.0.0 full-round reports are historical",
+    "Formal sound assets and regional videos remain empty",
+    "Craft geometry animation remains preview; existing pattern artwork was not redrawn"
+  ]
+}
