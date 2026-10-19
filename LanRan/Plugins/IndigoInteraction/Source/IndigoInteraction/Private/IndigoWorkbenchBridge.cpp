@@ -1,4 +1,5 @@
 #include "IndigoWorkbenchBridge.h"
+#include "IndigoOpeningVideo.h"
 #include "IndigoWorkbenchWidget.h"
 #include "IndigoDirector.h"
 #include "IndigoFlowComponent.h"
@@ -9,6 +10,7 @@
 #include "Camera/CameraActor.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Components/SceneComponent.h"
+#include "Components/BoxComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
@@ -23,6 +25,7 @@ AIndigoWorkbenchBridge::AIndigoWorkbenchBridge()
 {
     SetRootComponent(CreateDefaultSubobject<USceneComponent>(TEXT("Root")));
     PrimaryActorTick.bCanEverTick = true;
+    OpeningVideo=CreateDefaultSubobject<UIndigoOpeningVideoComponent>(TEXT("OpeningVideo"));
 }
 void AIndigoWorkbenchBridge::BeginPlay()
 {
@@ -81,11 +84,13 @@ void AIndigoWorkbenchBridge::HandleSubtitle(FText Text)
 }
 bool AIndigoWorkbenchBridge::IsPlayerNear() const
 {
+    if(OpeningVideo && OpeningVideo->bPlaying) return false;
     const APawn* Pawn = Player ? Player->GetPawn() : nullptr;
     return Pawn && FVector::DistSquared(Pawn->GetActorLocation(), GetActorLocation()) <= FMath::Square(InteractionRadius);
 }
 bool AIndigoWorkbenchBridge::EnterWorkbench()
 {
+    if(OpeningVideo && OpeningVideo->bPlaying) return false;
     if (bWorkbenchActive || !Player || !IsPlayerNear() || !GetFlow() || !IsValid(WorkbenchCamera)) return false;
     PreviousView = Player->GetViewTarget();
     bPreviousCursor = Player->bShowMouseCursor;
@@ -159,9 +164,21 @@ AIndigoInteractable* AIndigoWorkbenchBridge::TracePointer(bool bIgnorePressed) c
     FCollisionQueryParams Params(SCENE_QUERY_STAT(IndigoWorkbenchPointer), false);
     if (Player->GetPawn()) Params.AddIgnoredActor(Player->GetPawn());
     if (bIgnorePressed && IsValid(Pressed)) Params.AddIgnoredActor(Pressed);
-    FHitResult Hit;
-    GetWorld()->LineTraceSingleByChannel(Hit,O,O+D*100000.f,ECC_Visibility,Params);
-    return Cast<AIndigoInteractable>(Hit.GetActor());
+    // Only the registered, available workbench handles participate in pointer picking.
+    // Decorative boards and child meshes must not occlude their own drop targets.
+    AIndigoInteractable* Best=nullptr;
+    float BestDistance=TNumericLimits<float>::Max();
+    for(TActorIterator<AIndigoInteractable> It(GetWorld());It;++It)
+    {
+        AIndigoInteractable* Candidate=*It;
+        if((bIgnorePressed && Candidate==Pressed) || !Candidate->IsAvailable(GetFlow())) continue;
+        if(bIgnorePressed && IsValid(Pressed) && !Candidate->Accepts(Pressed,GetFlow())) continue;
+        Candidate->AlignSlotToVisual();
+        FHitResult Hit;
+        if(Candidate->HitBox->LineTraceComponent(Hit,O,O+D*100000.f,Params) && Hit.Distance<BestDistance)
+        { Best=Candidate; BestDistance=Hit.Distance; }
+    }
+    return Best;
 }
 bool AIndigoWorkbenchBridge::OnPlane(FVector& Point) const
 {

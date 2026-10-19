@@ -19,6 +19,8 @@ void AIndigoCraftHandle::Configure(EIndigoStep NewStep,EIndigoAction NewAction,i
     if(Changed || !bEnabledBefore || bTarget) SetActorLocation(Position);
     ActiveStep=NewStep;Action=NewAction;ActionIndex=Index;
     Kind=bTarget?EIndigoInteractionKind::DropTarget:EIndigoInteractionKind::DragSource;
+    // Cover the entire visible green marker, with a small allowance at its edge.
+    HitBox->SetBoxExtent(bTarget?FVector(15,15,7):FVector(10,10,6));
     Marker->SetRelativeScale3D(bTarget?FVector(.22,.22,.012):FVector(.13,.13,.025));
     SetActorHiddenInGame(!bEnabled);SetActorEnableCollision(bEnabled);bEnabledBefore=bEnabled;
     if(!Material) Material=Marker->CreateDynamicMaterialInstance(0);

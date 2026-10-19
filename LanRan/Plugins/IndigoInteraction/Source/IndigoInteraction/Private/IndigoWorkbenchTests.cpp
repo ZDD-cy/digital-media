@@ -4,6 +4,10 @@
 #include "IndigoFlowComponent.h"
 #include "Engine/World.h"
 #include "Misc/AutomationTest.h"
+#include "Components/BoxComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMeshActor.h"
+#include "Engine/StaticMesh.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FIndigoWorkbenchDropTest,"Indigo.Workbench.SelectionGuards",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
@@ -45,4 +49,24 @@ bool FIndigoWorkbenchDropTest::RunTest(const FString& Parameters)
     World->DestroyWorld(false);
     return true;
 }
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FIndigoSlotVisualTest,"Indigo.Workbench.SlotFollowsVisual",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
+bool FIndigoSlotVisualTest::RunTest(const FString& Parameters)
+{
+    UWorld* World=UWorld::CreateWorld(EWorldType::Game,false);
+    AStaticMeshActor* Board=World->SpawnActor<AStaticMeshActor>();
+    UStaticMeshComponent* Mesh=Board->GetStaticMeshComponent();
+    Mesh->SetMobility(EComponentMobility::Movable);
+    Mesh->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Cube.Cube")));
+    Mesh->SetWorldTransform(FTransform(FRotator(0,35,0),FVector(400,-250,120),FVector(2,.5,.1)));
+    AIndigoInteractable* Slot=World->SpawnActor<AIndigoInteractable>();
+    Slot->Kind=EIndigoInteractionKind::DropTarget;Slot->SlotVisual=Mesh;
+    Slot->AlignSlotToVisual();
+    TestTrue(TEXT("Slot uses visual component position"),Slot->GetActorLocation().Equals(Mesh->GetComponentLocation(),.01f));
+    TestTrue(TEXT("Slot follows visual rotation"),Slot->GetActorQuat().Equals(Mesh->GetComponentQuat(),.001f));
+    TestTrue(TEXT("Slot scales with board"),Slot->HitBox->GetScaledBoxExtent().Equals(FVector(108,27,5.4),.01f));
+    Mesh->SetWorldLocation(FVector(700,-300,185));Slot->AlignSlotToVisual();
+    TestTrue(TEXT("Animated movement cannot leave stale drop position"),Slot->GetActorLocation().Equals(FVector(700,-300,185),.01f));
+    World->DestroyWorld(false);return true;
+}
 #endif
+

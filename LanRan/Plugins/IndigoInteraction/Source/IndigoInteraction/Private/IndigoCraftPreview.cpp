@@ -3,6 +3,7 @@
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/Texture2D.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "IndigoCraftHandle.h"
@@ -93,7 +94,7 @@ void AIndigoCraftPreview::ResetVisuals_Implementation()
     MotionToken=0; ActiveCue=NAME_None; Elapsed=0.f;
     CompletedFolds=0; bPlaced=bClosed=bLeftClamped=bRightClamped=false;
     bUnfolded=false; DisplayedResult=FIndigoResult();
-    ClothCenter=FVector(0,-20,32); ClothSize=FVector(108,76,.35f); PoseCloth();
+    ClothCenter=FVector(0,-20,3); ClothSize=FVector(108,76,.35f); PoseCloth();
     MovingCloth->SetVisibility(false);
     FoldLine->SetVisibility(false);
     FoldPivot->SetRelativeTransform(FTransform::Identity);
@@ -113,21 +114,28 @@ void AIndigoCraftPreview::ResetVisuals_Implementation()
     if(TrialMaterial) TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FLinearColor(.8,.85,.76));
     for(int32 I=0;I<FuelMarkers.Num();++I)
     {
-        FuelMarkers[I]->SetRelativeLocation(FVector(62+I*14,104,-5));FuelMarkers[I]->SetRelativeScale3D(FVector(.10,.12,.10));FuelMarkers[I]->SetVisibility(false);
+        FuelMarkers[I]->SetRelativeLocation(FVector(62+I*14,104,5));FuelMarkers[I]->SetRelativeScale3D(FVector(.10,.12,.10));FuelMarkers[I]->SetVisibility(false);
     }
-    if(ClothMaterial) ClothMaterial->SetScalarParameterValue(TEXT("ShowPattern"),0.f);
+    if(ClothMaterial)
+    {
+        ClothMaterial->SetScalarParameterValue(TEXT("ShowPattern"),0.f);
+        if(UndyedTexture) ClothMaterial->SetTextureParameterValue(TEXT("ResultTexture"),UndyedTexture);
+    }
     SetDyeProgress_Implementation(0,0.f);
 }
 void AIndigoCraftPreview::ShowFinalQuilt_Implementation(const FIndigoResult& Result)
 {
     DisplayedResult=Result; bUnfolded=true;
-    ClothCenter=FVector(0,-20,32); ClothSize=FVector(108,76,.35f); PoseCloth();
+    ClothCenter=FVector(0,-20,3); ClothSize=FVector(108,76,.35f); PoseCloth();
     SetDyeProgress_Implementation(Result.Depth,0.f);
     if(ClothMaterial)
     {
         ClothMaterial->SetScalarParameterValue(TEXT("PatternLeft"),static_cast<uint8>(Result.Left));
         ClothMaterial->SetScalarParameterValue(TEXT("PatternRight"),static_cast<uint8>(Result.Right));
         ClothMaterial->SetScalarParameterValue(TEXT("ShowPattern"),1.f);
+        const int32 TextureIndex=((static_cast<int32>(Result.Left)-1)*3+static_cast<int32>(Result.Right)-1)*5+FMath::Clamp(Result.Depth,0,4);
+        if(ResultTextures.IsValidIndex(TextureIndex) && ResultTextures[TextureIndex])
+            ClothMaterial->SetTextureParameterValue(TEXT("ResultTexture"),ResultTextures[TextureIndex]);
     }
 }
 TArray<USceneComponent*> AIndigoCraftPreview::DyeParts() const { return {Cloth,LowerPlate,PlatePivot,LeftClamp,RightClamp}; }
@@ -194,7 +202,7 @@ void AIndigoCraftPreview::ApplyMotion(float T)
     {
         PlatePivot->SetRelativeRotation(FRotator(110*FMath::Clamp(T*4.f,0.f,1.f),0,0));
         const float U=FMath::Clamp((T-.25f)/.75f,0.f,1.f);
-        ClothCenter=FMath::Lerp(MoveStart,FVector(0,-20,32),U);
+        ClothCenter=FMath::Lerp(MoveStart,FVector(0,-20,3),U);
         // Reverse the three blockout folds one at a time, then restore a flat sheet.
         const float X=FMath::Clamp(U*3.f,0.f,1.f)+FMath::Clamp(U*3.f-2.f,0.f,1.f);
         const float Y=FMath::Clamp(U*3.f-1.f,0.f,1.f);
@@ -214,7 +222,7 @@ void AIndigoCraftPreview::ApplyMotion(float T)
     else if (ActiveCue==TEXT("AddFuel"))
     {
         const int32 Index=FMath::Clamp(Flow->Fuel,0,FuelMarkers.Num()-1);
-        FuelMarkers[Index]->SetRelativeLocation(FVector(62+Index*14,104,-5)+FVector(0,-52*Smooth,-12*Smooth));
+        FuelMarkers[Index]->SetRelativeLocation(FVector(62+Index*14,104,5)+FVector(0,-52*Smooth,-12*Smooth));
         FuelMarkers[Index]->SetVisibility(T<.9f);
     }
     else if (ActiveCue==TEXT("Dye"))

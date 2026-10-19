@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0",
-  "succeeded": 6,
+  "version": "2.1.0",
+  "succeeded": 7,
   "failed": 0,
   "tests": [
     {
@@ -21,6 +21,10 @@
     },
     {
       "name": "Indigo.Workbench.SelectionGuards",
+      "state": "Success"
+    },
+    {
+      "name": "Indigo.Workbench.SlotFollowsVisual",
       "state": "Success"
     },
     {

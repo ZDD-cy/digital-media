@@ -10,6 +10,7 @@ class ACameraActor;
 class APlayerController;
 class UIndigoFlowComponent;
 class UIndigoWorkbenchWidget;
+class UIndigoOpeningVideoComponent;
 
 // Works with the project's existing first-person PlayerController and pawn.
 UCLASS(Blueprintable)
@@ -18,6 +19,7 @@ class INDIGOINTERACTION_API AIndigoWorkbenchBridge : public AActor
     GENERATED_BODY()
 public:
     AIndigoWorkbenchBridge();
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Indigo|Opening Video") TObjectPtr<UIndigoOpeningVideoComponent> OpeningVideo;
     UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="Indigo") TObjectPtr<AIndigoDirector> Director;
     UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="Indigo") TObjectPtr<ACameraActor> WorkbenchCamera;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo", meta=(ClampMin="50")) float InteractionRadius = 350.f;

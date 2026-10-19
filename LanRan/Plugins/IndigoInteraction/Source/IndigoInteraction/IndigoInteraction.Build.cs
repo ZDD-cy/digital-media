@@ -4,7 +4,7 @@ public class IndigoInteraction : ModuleRules
     public IndigoInteraction(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        PublicDependencyModuleNames.AddRange(new[] { "Core", "CoreUObject", "Engine", "InputCore", "UMG" });
+        PublicDependencyModuleNames.AddRange(new[] { "Core", "CoreUObject", "Engine", "InputCore", "UMG", "MediaAssets" });
         PrivateDependencyModuleNames.AddRange(new[] { "Slate", "SlateCore" });
     }
 }

@@ -9,6 +9,7 @@ class UStaticMeshComponent;
 class USceneComponent;
 class UMaterialInstanceDynamic;
 class AIndigoCraftHandle;
+class UTexture2D;
 
 // Replaceable blockout rig. Its own completed motion returns the original flow token.
 UCLASS(Blueprintable)
@@ -21,6 +22,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo", meta=(ClampMin="0.1")) float MotionSeconds = 1.2f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo", meta=(ClampMin="0.2")) float DyeSeconds = 4.f;
     UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="Indigo") TArray<TObjectPtr<AActor>> SelectionSamples;
+    // AA depths 0..4, AB 0..4 ... CC 0..4, using the existing artwork.
+    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="Indigo") TArray<TObjectPtr<UTexture2D>> ResultTextures;
+    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="Indigo") TObjectPtr<UTexture2D> UndyedTexture;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") TObjectPtr<UStaticMeshComponent> Cloth;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") TObjectPtr<UStaticMeshComponent> MovingCloth;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") TObjectPtr<UStaticMeshComponent> FoldLine;

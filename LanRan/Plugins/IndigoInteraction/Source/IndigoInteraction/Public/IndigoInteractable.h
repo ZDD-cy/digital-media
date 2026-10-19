@@ -5,6 +5,7 @@
 #include "IndigoInteractable.generated.h"
 
 class UBoxComponent;
+class UStaticMeshComponent;
 class UIndigoFlowComponent;
 UENUM(BlueprintType)
 enum class EIndigoInteractionKind : uint8 { Click, DragSource, DropTarget };
@@ -15,6 +16,10 @@ class INDIGOINTERACTION_API AIndigoInteractable : public AActor
     GENERATED_BODY()
 public:
     AIndigoInteractable();
+    virtual void Tick(float DeltaSeconds) override;
+    // A slot follows the actual animated board component, including its mesh pivot offset.
+    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="Indigo") TObjectPtr<UStaticMeshComponent> SlotVisual;
+    UFUNCTION(BlueprintCallable, Category="Indigo") void AlignSlotToVisual();
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") TObjectPtr<UBoxComponent> HitBox;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo") EIndigoInteractionKind Kind = EIndigoInteractionKind::Click;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo") EIndigoStep ActiveStep = EIndigoStep::Select;
