@@ -12,6 +12,7 @@
 #include "Components/SceneComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "Engine/World.h"
@@ -38,6 +39,7 @@ void AIndigoWorkbenchBridge::BeginPlay()
         Flow->OnStepChanged.AddDynamic(this,&AIndigoWorkbenchBridge::HandleStep);
         Flow->OnSubtitle.AddDynamic(this,&AIndigoWorkbenchBridge::HandleSubtitle);
         Flow->OnInteractionInvalidated.AddDynamic(this,&AIndigoWorkbenchBridge::CancelDrag);
+        if (Flow->bSkipReceipt && Flow->Step==EIndigoStep::Receive) Flow->Restart();
     }
     Widget = CreateWidget<UIndigoWorkbenchWidget>(Player, UIndigoWorkbenchWidget::StaticClass());
     if (Widget) { Widget->SetBridge(this); Widget->AddToViewport(10); Widget->Refresh(); }
@@ -175,8 +177,20 @@ AIndigoInteractable* AIndigoWorkbenchBridge::TracePointer(bool bIgnorePressed) c
         if(bIgnorePressed && IsValid(Pressed) && !Candidate->Accepts(Pressed,GetFlow())) continue;
         Candidate->AlignSlotToVisual();
         FHitResult Hit;
-        if(Candidate->HitBox->LineTraceComponent(Hit,O,O+D*100000.f,Params) && Hit.Distance<BestDistance)
-        { Best=Candidate; BestDistance=Hit.Distance; }
+        if(Candidate->HitBox->LineTraceComponent(Hit,O,O+D*100000.f,Params))
+        {
+            // Enlarged neighboring slots can overlap. Choose the nearest board center
+            // in screen space instead of whichever front face the ray meets first.
+            float Distance=Hit.Distance;
+            if(bIgnorePressed && Candidate->Kind==EIndigoInteractionKind::DropTarget)
+            {
+                FVector2D Center,Pointer=EventPosition;
+                if(!bEventPointer) Player->GetMousePosition(Pointer.X,Pointer.Y);
+                if(Player->ProjectWorldLocationToScreen(Candidate->GetActorLocation(),Center))
+                    Distance=FVector2D::DistSquared(Center,Pointer);
+            }
+            if(Distance<BestDistance) { Best=Candidate;BestDistance=Distance; }
+        }
     }
     return Best;
 }

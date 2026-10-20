@@ -3,6 +3,7 @@
 #include "IndigoFlowComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
+#include "Engine/StaticMesh.h"
 #include "Misc/AutomationTest.h"
 #include "UObject/Script.h"
 
@@ -38,7 +39,7 @@ bool FIndigoFinishTest::RunTest(const FString& Parameters)
         TestTrue(TEXT("Reveal waits for delivery"),F->Step==EIndigoStep::Reveal && Rig->bUnfolded);
         TestEqual(TEXT("Shared depth displayed"),Rig->DisplayedResult.Depth,D);
         TestTrue(TEXT("Shared pair displayed"),Rig->DisplayedResult.Left==F->Result.Left && Rig->DisplayedResult.Right==F->Result.Right);
-        TestTrue(TEXT("Full cloth restored"),Rig->Cloth->GetRelativeScale3D().Equals(FVector(1.08,.76,.0035),.0001));
+        TestTrue(TEXT("Full cloth restored in authored orientation"),Rig->Cloth->GetStaticMesh()->GetBounds().TransformBy(Rig->Cloth->GetComponentTransform()).BoxExtent.Equals(FVector(54,38,.175),.001));
         Rig->Tick(20.f);TestTrue(TEXT("No automatic delivery"),F->Step==EIndigoStep::Reveal);
         Complete(EIndigoAction::Deliver);TestTrue(TEXT("Delivery reaches end"),F->Step==EIndigoStep::End);
         F->Perform(EIndigoAction::Review);TestTrue(TEXT("Review preserves result"),F->IsReview() && F->Result.Depth==D);

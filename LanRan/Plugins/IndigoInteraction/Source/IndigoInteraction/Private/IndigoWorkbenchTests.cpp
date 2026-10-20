@@ -8,6 +8,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/StaticMesh.h"
+#include "IndigoCraftPreview.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FIndigoWorkbenchDropTest,"Indigo.Workbench.SelectionGuards",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
@@ -63,9 +64,35 @@ bool FIndigoSlotVisualTest::RunTest(const FString& Parameters)
     Slot->AlignSlotToVisual();
     TestTrue(TEXT("Slot uses visual component position"),Slot->GetActorLocation().Equals(Mesh->GetComponentLocation(),.01f));
     TestTrue(TEXT("Slot follows visual rotation"),Slot->GetActorQuat().Equals(Mesh->GetComponentQuat(),.001f));
-    TestTrue(TEXT("Slot scales with board"),Slot->HitBox->GetScaledBoxExtent().Equals(FVector(108,27,5.4),.01f));
+    TestTrue(TEXT("Slot padding stays generous on a scaled board"),Slot->HitBox->GetScaledBoxExtent().Equals(FVector(128,53,25),.01f));
     Mesh->SetWorldLocation(FVector(700,-300,185));Slot->AlignSlotToVisual();
     TestTrue(TEXT("Animated movement cannot leave stale drop position"),Slot->GetActorLocation().Equals(FVector(700,-300,185),.01f));
+    World->DestroyWorld(false);return true;
+}
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FIndigoAuthoredAppearanceTest,"Indigo.Workbench.AuthoredAppearance",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
+bool FIndigoAuthoredAppearanceTest::RunTest(const FString& Parameters)
+{
+    UWorld* World=UWorld::CreateWorld(EWorldType::Game,false);
+    auto* Director=World->SpawnActor<AIndigoDirector>();
+    auto* Flow=Director->Flow.Get();Flow->bSkipReceipt=true;Flow->Restart();
+    TestTrue(TEXT("Removed receipt starts in selection"),Flow->Step==EIndigoStep::Select);
+    auto* Source=World->SpawnActor<AIndigoPatternSource>();
+    Source->Pattern=EIndigoPattern::B;
+    Source->BoardMesh->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Plane.Plane")));
+    auto* Board=World->SpawnActor<AStaticMeshActor>();
+    auto* Mesh=Board->GetStaticMeshComponent();Mesh->SetMobility(EComponentMobility::Movable);
+    auto* Original=LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Cube.Cube"));Mesh->SetStaticMesh(Original);
+    Mesh->SetWorldRotation(FRotator(0,-90,0));
+    auto* Slot=World->SpawnActor<AIndigoInteractable>();Slot->Kind=EIndigoInteractionKind::DropTarget;Slot->SlotVisual=Mesh;
+    Slot->ApplySelectedPattern(Flow);
+    Flow->SetPattern(true,EIndigoPattern::B);Slot->ApplySelectedPattern(Flow);
+    TestTrue(TEXT("Selection replaces the actual displayed mesh"),Mesh->GetStaticMesh()==Source->BoardMesh->GetStaticMesh());
+    TestTrue(TEXT("Selection preserves authored minus 90 yaw"),Mesh->GetComponentQuat().Equals(FRotator(0,-90,0).Quaternion(),.001f));
+    Flow->SetPattern(true,EIndigoPattern::None);Slot->ApplySelectedPattern(Flow);
+    TestTrue(TEXT("Clearing restores original slot mesh"),Mesh->GetStaticMesh()==Original);
+    const float Expected[]={4.f,1.f,.1f,.03f};
+    for(int32 I=0;I<4;++I) TestEqual(TEXT("Authored dye depth"),AIndigoCraftPreview::ColorDepthForStage(I+1),Expected[I]);
+    Flow->Restart();TestTrue(TEXT("Restart also skips removed receipt"),Flow->Step==EIndigoStep::Select);
     World->DestroyWorld(false);return true;
 }
 #endif

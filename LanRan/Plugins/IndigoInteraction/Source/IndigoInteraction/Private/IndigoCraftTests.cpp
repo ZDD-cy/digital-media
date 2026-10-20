@@ -4,6 +4,7 @@
 #include "IndigoFlowComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
+#include "Engine/StaticMesh.h"
 #include "Misc/AutomationTest.h"
 #include "UObject/Script.h"
 
@@ -66,7 +67,7 @@ bool FIndigoCraftTest::RunTest(const FString& Parameters)
     Bridge->PerformAction(EIndigoAction::Fold,0); const int32 CancelledToken=F->GetAnimationToken(); Preview->Tick(.4f);
     Bridge->RestartWorkbench(); Preview->Tick(2.f);
     TestTrue(TEXT("Restart hides rig and resets pose"),Preview->IsHidden() && Preview->CompletedFolds==0 && !Preview->MovingCloth->IsVisible());
-    TestTrue(TEXT("Restart restores cloth size"),Preview->Cloth->GetRelativeScale3D().Equals(FVector(1.08,.76,.0035),.0001));
+    TestTrue(TEXT("Restart restores cloth dimensions with authored yaw"),Preview->Cloth->GetStaticMesh()->GetBounds().TransformBy(Preview->Cloth->GetComponentTransform()).BoxExtent.Equals(FVector(54,38,.175),.001));
     Select(); Bridge->PerformAction(EIndigoAction::Fold,0);
     TestFalse(TEXT("Cancelled run cannot complete new motion"),F->CompleteAnimation(CancelledToken));
     Preview->Tick(1.1f);
