@@ -24,7 +24,7 @@
 		},
 		{
 			"Name": "Tripo3DUEBridge",
-			"Enabled": true,
+			"Enabled": false,
 			"SupportedTargetPlatforms": [
 				"Win64"
 			]
