@@ -20,6 +20,9 @@ public:
     // A slot follows the actual animated board component, including its mesh pivot offset.
     UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category="Indigo") TObjectPtr<UStaticMeshComponent> SlotVisual;
     UFUNCTION(BlueprintCallable, Category="Indigo") void AlignSlotToVisual();
+    // World-space padding stays generous even on a scaled board.
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo") FVector SlotPadding = FVector(28.f,28.f,20.f);
+    UFUNCTION(BlueprintCallable, Category="Indigo") void ApplySelectedPattern(UIndigoFlowComponent* Flow);
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") TObjectPtr<UBoxComponent> HitBox;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo") EIndigoInteractionKind Kind = EIndigoInteractionKind::Click;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo") EIndigoStep ActiveStep = EIndigoStep::Select;
@@ -37,4 +40,9 @@ public:
     virtual void SetHover_Implementation(bool bHovered);
     virtual void SetDropHighlight_Implementation(bool bHighlighted);
     virtual void InvalidDrop_Implementation();
+private:
+    EIndigoPattern VisiblePattern = EIndigoPattern::None;
+    bool bPatternVisualInitialized = false;
+    UPROPERTY(Transient) TObjectPtr<class UStaticMesh> EmptySlotMesh;
+    UPROPERTY(Transient) TArray<TObjectPtr<class UMaterialInterface>> EmptySlotMaterials;
 };

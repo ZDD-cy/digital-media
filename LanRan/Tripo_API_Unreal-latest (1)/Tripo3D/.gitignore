@@ -1,0 +1,63 @@
+# Unreal Engine specific ignores
+Binaries/
+Intermediate/
+Saved/
+Build/
+
+# Visual Studio files
+.vs/
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+
+# Visual Studio Code files
+.vscode/
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Cache files
+*.VC.db
+*.VC.db-shm
+*.VC.db-wal
+
+# Backup & Log Files
+*.log
+*.bak
+*.backup
+*~ 
