@@ -2,9 +2,11 @@
 #include "IndigoWorkbenchBridge.h"
 #include "IndigoDirector.h"
 #include "IndigoFlowComponent.h"
+#include "IndigoPatternSource.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
 #include "Misc/AutomationTest.h"
 #include "UObject/Script.h"
 
@@ -99,6 +101,68 @@ bool FIndigoFoldClearanceTest::RunTest(const FString& Parameters)
     }
     TestTrue(TEXT("Three safe folds complete"),Flow->Step==EIndigoStep::Clamp);
     TestTrue(TEXT("Screen-left clamp is positive X for the workbench cameras"),Rig->LeftClamp->GetRelativeLocation().X>Rig->RightClamp->GetRelativeLocation().X);
+    World->DestroyWorld(false);return true;
+}
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FIndigoPlatePatternTest,"Indigo.Workbench.SelectedPatternPlates",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
+bool FIndigoPlatePatternTest::RunTest(const FString& Parameters)
+{
+    FEditorScriptExecutionGuard Guard;
+    UWorld* World=UWorld::CreateWorld(EWorldType::Game,false);
+    auto* Director=World->SpawnActor<AIndigoDirector>();
+    auto* Rig=World->SpawnActor<AIndigoCraftPreview>();
+    auto* Flow=Director->Flow.Get();
+    Flow->VisualTargets.Add(Rig);Flow->bSkipReceipt=true;Flow->bUsePlaceholderTimer=false;
+
+    UStaticMesh* Meshes[]{
+        LoadObject<UStaticMesh>(nullptr,TEXT("/Game/TripoModels/mask1/239f81c9-5b7c-41ef-8d54-116de3ecea54.239f81c9-5b7c-41ef-8d54-116de3ecea54")),
+        LoadObject<UStaticMesh>(nullptr,TEXT("/Game/TripoModels/mask2/42222493-7cdb-4a65-8c65-a3656f0036a9.42222493-7cdb-4a65-8c65-a3656f0036a9")),
+        LoadObject<UStaticMesh>(nullptr,TEXT("/Game/TripoModels/mask3/eb673182-2168-4c8a-baeb-76b62a7d7193.eb673182-2168-4c8a-baeb-76b62a7d7193"))
+    };
+    UMaterialInterface* Materials[]{
+        LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/TripoModels/mask1/239f81c9-5b7c-41ef-8d54-116de3ecea54_Mat.239f81c9-5b7c-41ef-8d54-116de3ecea54_Mat")),
+        LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/TripoModels/mask2/42222493-7cdb-4a65-8c65-a3656f0036a9_Mat.42222493-7cdb-4a65-8c65-a3656f0036a9_Mat")),
+        LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/TripoModels/mask3/eb673182-2168-4c8a-baeb-76b62a7d7193_Mat.eb673182-2168-4c8a-baeb-76b62a7d7193_Mat"))
+    };
+    const EIndigoPattern Patterns[]{EIndigoPattern::A,EIndigoPattern::B,EIndigoPattern::C};
+    for(int32 I=0;I<3;++I)
+    {
+        TestNotNull(TEXT("Pattern static mesh loads"),Meshes[I]);
+        TestNotNull(TEXT("Pattern material loads"),Materials[I]);
+        auto* Source=World->SpawnActor<AIndigoPatternSource>();
+        Source->Pattern=Patterns[I];
+        Source->BoardMesh->SetStaticMesh(Meshes[I]);
+        Source->BoardMesh->SetMaterial(0,Materials[I]);
+    }
+
+    auto PlateCenter=[Rig](UStaticMeshComponent* Plate)
+    {
+        FVector Min,Max;Plate->GetLocalBounds(Min,Max);
+        return Plate->GetComponentTransform().TransformPosition((Min+Max)*.5f);
+    };
+    const FVector LowerCenter=PlateCenter(Rig->LowerPlate);
+    const FVector UpperCenter=PlateCenter(Rig->UpperPlate);
+    Flow->Restart();
+    TestTrue(TEXT("Left selection applied"),Flow->SetPattern(true,EIndigoPattern::B));
+    TestTrue(TEXT("Right selection applied"),Flow->SetPattern(false,EIndigoPattern::C));
+    TestTrue(TEXT("Lower plate uses left pattern mesh"),Rig->LowerPlate->GetStaticMesh()==Meshes[1]);
+    TestTrue(TEXT("Upper plate uses right pattern mesh"),Rig->UpperPlate->GetStaticMesh()==Meshes[2]);
+    TestTrue(TEXT("Lower plate uses left pattern material"),Rig->LowerPlate->GetMaterial(0)==Materials[1]);
+    TestTrue(TEXT("Upper plate uses right pattern material"),Rig->UpperPlate->GetMaterial(0)==Materials[2]);
+    TestTrue(TEXT("Lower plate keeps its movement center"),PlateCenter(Rig->LowerPlate).Equals(LowerCenter,.01f));
+    TestTrue(TEXT("Upper plate keeps its movement center"),PlateCenter(Rig->UpperPlate).Equals(UpperCenter,.01f));
+
+    auto PlateHasCanonicalFootprint=[Rig](UStaticMeshComponent* Plate,const FVector& CanonicalSize)
+    {
+        FVector Min,Max;Plate->GetLocalBounds(Min,Max);
+        // GetLocalBounds is unscaled. Compare after component scaling in the
+        // plate's own rotated frame; UpperPlate is parented to a rotating
+        // 110-degree plate pivot, so its world AABB is not stable.
+        const FVector ScaledSize=(Max-Min)*Plate->GetComponentScale().GetAbs();
+        const FVector ExpectedSize=Plate->GetRelativeRotation().UnrotateVector(CanonicalSize).GetAbs();
+        return ScaledSize.Equals(ExpectedSize,.2f);
+    };
+    TestTrue(TEXT("Lower plate keeps its authored footprint"),PlateHasCanonicalFootprint(Rig->LowerPlate,FVector(46,44,4)));
+    TestTrue(TEXT("Upper plate keeps its authored footprint"),PlateHasCanonicalFootprint(Rig->UpperPlate,FVector(46,44,3.5f)));
     World->DestroyWorld(false);return true;
 }
 #endif

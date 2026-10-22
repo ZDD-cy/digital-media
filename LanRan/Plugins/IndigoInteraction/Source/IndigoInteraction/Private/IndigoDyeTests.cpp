@@ -11,6 +11,25 @@
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FIndigoDyeTest,"Indigo.Workbench.DyeDepthCallbacks",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
 bool FIndigoDyeTest::RunTest(const FString& Parameters)
 {
+    const float ExpectedDepth[]{10.f,4.f,1.f,.1f,.03f};
+    for(int32 Depth=0;Depth<5;++Depth)
+    {
+        TestEqual(TEXT("Color depth follows the authored scalar ladder"),AIndigoCraftPreview::ColorDepthForStage(Depth),ExpectedDepth[Depth]);
+        const FLinearColor Shade=AIndigoCraftPreview::ClothColorForStage(Depth);
+        const float Scalar=AIndigoCraftPreview::ColorDepthForStage(Depth);
+        const FLinearColor Effective=Shade/Scalar*Scalar;
+        TestTrue(TEXT("Material depth compensation preserves the authored shade"),Effective.Equals(Shade,.001f));
+    }
+    TestEqual(TEXT("Depth below range is clamped"),AIndigoCraftPreview::ColorDepthForStage(-1),10.f);
+    TestEqual(TEXT("Depth above four stages is clamped"),AIndigoCraftPreview::ColorDepthForStage(99),.03f);
+    TestTrue(TEXT("Four dye stages become progressively darker"),
+        AIndigoCraftPreview::ClothColorForStage(1).GetLuminance()>
+        AIndigoCraftPreview::ClothColorForStage(2).GetLuminance() &&
+        AIndigoCraftPreview::ClothColorForStage(2).GetLuminance()>
+        AIndigoCraftPreview::ClothColorForStage(3).GetLuminance() &&
+        AIndigoCraftPreview::ClothColorForStage(3).GetLuminance()>
+        AIndigoCraftPreview::ClothColorForStage(4).GetLuminance());
+
     FEditorScriptExecutionGuard ScriptGuard;
     UWorld* World=UWorld::CreateWorld(EWorldType::Game,false);
     auto* Director=World->SpawnActor<AIndigoDirector>();
@@ -27,6 +46,20 @@ bool FIndigoDyeTest::RunTest(const FString& Parameters)
         for(int32 I=0;I<3;++I){Bridge->PerformAction(EIndigoAction::Fold,I);Rig->Tick(.3f);}
         for(auto A:{EIndigoAction::PlaceCloth,EIndigoAction::ClosePlate,EIndigoAction::ClampLeft,EIndigoAction::ClampRight}){Bridge->PerformAction(A);Rig->Tick(.3f);}
         TestTrue(TEXT("Prepared at dye stage"),F->Step==EIndigoStep::Dye);
+        auto Center=[](UStaticMeshComponent* Plate)
+        {
+            FVector Min,Max;Plate->GetLocalBounds(Min,Max);
+            return Plate->GetComponentTransform().TransformPosition((Min+Max)*.5f);
+        };
+        const FVector LowerCenter=Center(Rig->LowerPlate);
+        const FVector UpperCenter=Center(Rig->UpperPlate);
+        TestTrue(TEXT("Closed plates share the same horizontal center"),
+            FMath::IsNearlyEqual(LowerCenter.X,UpperCenter.X,.1f) &&
+            FMath::IsNearlyEqual(LowerCenter.Y,UpperCenter.Y,.1f));
+        TestTrue(TEXT("Closed upper plate matches the lower plate rotation"),
+            Rig->UpperPlate->GetComponentQuat().Equals(Rig->LowerPlate->GetComponentQuat(),.001f));
+        TestTrue(TEXT("Closed upper plate settles just above the cloth"),
+            UpperCenter.Z>LowerCenter.Z && UpperCenter.Z-LowerCenter.Z<8.f);
     };
     for(int32 TargetDepth:{1,4})
     {

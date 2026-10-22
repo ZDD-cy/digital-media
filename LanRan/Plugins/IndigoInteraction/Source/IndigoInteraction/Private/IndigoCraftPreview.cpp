@@ -7,7 +7,9 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "IndigoCraftHandle.h"
+#include "IndigoPatternSource.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 
 FVector AIndigoCraftPreview::PartCenter(USceneComponent* Part) const
 {
@@ -36,6 +38,17 @@ float AIndigoCraftPreview::ColorDepthForStage(int32 Depth)
     const float Values[]={10.f,4.f,1.f,.1f,.03f};
     return Values[FMath::Clamp(Depth,0,4)];
 }
+FLinearColor AIndigoCraftPreview::ClothColorForStage(int32 Depth)
+{
+    static const FLinearColor Shades[]={
+        FLinearColor(.92f,.93f,.90f,1.f),
+        FLinearColor(.12f,.29f,.52f,1.f),
+        FLinearColor(.035f,.12f,.32f,1.f),
+        FLinearColor(.012f,.045f,.16f,1.f),
+        FLinearColor(.004f,.012f,.065f,1.f)
+    };
+    return Shades[FMath::Clamp(Depth,0,4)];
+}
 FVector AIndigoCraftPreview::BasinMotion(float T,bool bWash) const
 {
     const float Side=bWash?-BasinDistance:BasinDistance;
@@ -55,21 +68,105 @@ void AIndigoCraftPreview::UpdateClothParameters()
     const float Left=FMath::Max(1,static_cast<int32>(Result.Left));
     const float Right=FMath::Max(1,static_cast<int32>(Result.Right));
     const float Depth=FMath::Lerp(ColorDepthForStage(PreviewDepth),ColorDepthForStage(PreviewDepth+1),DyeProgress);
-    const FLinearColor Shades[]={FLinearColor(.92f,.93f,.90f),FLinearColor(.12f,.29f,.52f),FLinearColor(.035f,.12f,.32f),FLinearColor(.012f,.045f,.16f),FLinearColor(.004f,.012f,.065f)};
-    const FLinearColor Color=FMath::Lerp(Shades[PreviewDepth],Shades[FMath::Min(4,PreviewDepth+1)],DyeProgress);
+    const FLinearColor Color=FMath::Lerp(
+        ClothColorForStage(PreviewDepth),
+        ClothColorForStage(PreviewDepth+1),
+        DyeProgress);
+    // M_Cloth_main2 multiplies this color by ColorDepth. Pre-divide the
+    // authored shade so the vertex-stage result keeps the intended indigo
+    // value while the material parameter exposes the four source depths.
+    FLinearColor BaseColor=Color/FMath::Max(.001f,Depth);
+    BaseColor.A=1.f;
     for(UMaterialInstanceDynamic* Material:{ClothMaterial.Get(),SwatchMaterial.Get(),TrialMaterial.Get()}) if(Material)
     {
+        // Only the two player-controlled positions are written here.
+        // SelectIndex2 remains the fixed centre pattern authored on
+        // MI_Cloth_main2_Inst and can be changed without recompiling C++.
         Material->SetScalarParameterValue(TEXT("SelectIndex"),Left);
         Material->SetScalarParameterValue(TEXT("SelectIndex1"),Left);
-        Material->SetScalarParameterValue(TEXT("SelectIndex2"),1.f);
         Material->SetScalarParameterValue(TEXT("SelectIndex3"),Right);
         Material->SetScalarParameterValue(TEXT("ColorDepth"),Depth);
         Material->SetScalarParameterValue(TEXT("RevealPattern"),Material==ClothMaterial.Get() && bUnfolded?1.f:0.f);
-        // The authored graph multiplies ClothBaseColor by ColorDepth. Feed the
-        // actual graph, not just the obsolete DyeColor parameter.
-        Material->SetVectorParameterValue(TEXT("ClothBaseColor"),Color/FMath::Max(.001f,Depth));
+        Material->SetVectorParameterValue(TEXT("ClothBaseColor"),BaseColor);
         Material->SetVectorParameterValue(TEXT("ClothFigureColor"),FLinearColor(.92f,.93f,.90f,1.f));
     }
+}
+void AIndigoCraftPreview::CapturePlateDefaults()
+{
+    if(bPlateDefaultsCaptured) return;
+    AuthoredLowerPlateMesh=LowerPlate?LowerPlate->GetStaticMesh():nullptr;
+    AuthoredUpperPlateMesh=UpperPlate?UpperPlate->GetStaticMesh():nullptr;
+    AuthoredLowerPlateMaterials.Empty();
+    AuthoredUpperPlateMaterials.Empty();
+    if(LowerPlate) for(int32 I=0;I<LowerPlate->GetNumMaterials();++I) AuthoredLowerPlateMaterials.Add(LowerPlate->GetMaterial(I));
+    if(UpperPlate) for(int32 I=0;I<UpperPlate->GetNumMaterials();++I) AuthoredUpperPlateMaterials.Add(UpperPlate->GetMaterial(I));
+    bPlateDefaultsCaptured=true;
+}
+void AIndigoCraftPreview::RestorePlateVisual(
+    UStaticMeshComponent* Plate,
+    UStaticMesh* DefaultMesh,
+    const TArray<TObjectPtr<UMaterialInterface>>& DefaultMaterials,
+    const FVector& CanonicalSize)
+{
+    if(!Plate) return;
+    Plate->SetStaticMesh(DefaultMesh);
+    for(int32 I=0;I<Plate->GetNumMaterials();++I)
+        Plate->SetMaterial(I,DefaultMaterials.IsValidIndex(I)?DefaultMaterials[I].Get():nullptr);
+    SetPartScale(Plate,CanonicalSize);
+}
+void AIndigoCraftPreview::ApplyPlatePattern(
+    UStaticMeshComponent* Plate,
+    EIndigoPattern Pattern,
+    const FVector& CanonicalSize)
+{
+    if(!Plate) return;
+    AIndigoPatternSource* Source=nullptr;
+    if(Pattern!=EIndigoPattern::None && GetWorld())
+        for(TActorIterator<AIndigoPatternSource> It(GetWorld());It;++It)
+            if(It->Pattern==Pattern && It->BoardMesh && It->BoardMesh->GetStaticMesh()) { Source=*It; break; }
+    if(!Source)
+    {
+        RestorePlateVisual(
+            Plate,
+            Plate==LowerPlate.Get()?AuthoredLowerPlateMesh.Get():AuthoredUpperPlateMesh.Get(),
+            Plate==LowerPlate.Get()?AuthoredLowerPlateMaterials:AuthoredUpperPlateMaterials,
+            CanonicalSize);
+        return;
+    }
+    Plate->SetStaticMesh(Source->BoardMesh->GetStaticMesh());
+    for(int32 I=0;I<Plate->GetNumMaterials();++I)
+        Plate->SetMaterial(I,I<Source->BoardMesh->GetNumMaterials()?Source->BoardMesh->GetMaterial(I):nullptr);
+    // Copy only mesh appearance. The plate keeps its authored transform and
+    // movement center; SetPartScale compensates the new mesh bounds so the
+    // physical plate footprint stays identical throughout the animation.
+    SetPartScale(Plate,CanonicalSize);
+}
+void AIndigoCraftPreview::PreparePlateClose()
+{
+    if(!IsValid(UpperPlate) || !IsValid(LowerPlate) || !IsValid(PlatePivot)) return;
+    UpperPlateCloseStart=UpperPlate->GetRelativeLocation();
+
+    // Measure the closed pose without changing the authored hinge arc.
+    PlatePivot->SetRelativeRotation(FRotator::ZeroRotator);
+    UpperPlate->SetRelativeRotation(LowerPlate->GetRelativeRotation());
+    auto WorldBox=[this](UStaticMeshComponent* Part)
+    {
+        FVector Min,Max;Part->GetLocalBounds(Min,Max);
+        return FBox(Min,Max).TransformBy(Part->GetComponentTransform());
+    };
+    const FBox LowerBox=WorldBox(LowerPlate);
+    const FBox UpperBox=WorldBox(UpperPlate);
+    const FBox ClothBox=WorldBox(Cloth);
+    const float SupportTop=FMath::Max(LowerBox.Max.Z,ClothBox.Max.Z)+PlateCloseClearance;
+    const float TargetCenterZ=SupportTop+UpperBox.GetExtent().Z;
+    UpperPlateCloseDrop=TargetCenterZ-UpperBox.GetCenter().Z;
+}
+void AIndigoCraftPreview::SetPattern_Implementation(EIndigoPattern Left,EIndigoPattern Right)
+{
+    CapturePlateDefaults();
+    if(UpperPlate && LowerPlate) UpperPlate->SetRelativeRotation(LowerPlate->GetRelativeRotation());
+    ApplyPlatePattern(LowerPlate,Left,FVector(.46f,.44f,.04f));
+    ApplyPlatePattern(UpperPlate,Right,FVector(.46f,.44f,.035f));
 }
 
 AIndigoCraftPreview::AIndigoCraftPreview()
@@ -136,6 +233,7 @@ void AIndigoCraftPreview::UpdateHandles()
 void AIndigoCraftPreview::BeginPlay()
 {
     Super::BeginPlay();
+    CapturePlateDefaults();
     if(RuntimeClothMaterial)
         for(auto* Part:{Cloth.Get(),MovingCloth.Get(),DyeSwatch.Get(),TrialCloth.Get()}) Part->SetMaterial(0,RuntimeClothMaterial);
     ClothMaterial=Cloth->CreateDynamicMaterialInstance(0);
@@ -151,7 +249,11 @@ void AIndigoCraftPreview::BeginPlay()
 }
 void AIndigoCraftPreview::PoseCloth()
 {
-    SetPartLocation(Cloth,ClothCenter); Cloth->SetRelativeRotation(ClothRotation);
+    // Keep the working cloth in its authored orientation while folding,
+    // clamping and dyeing. The finished quilt gets a presentation rotation
+    // so it lies horizontally on the table.
+    const FRotator PresentedRotation=bUnfolded?(ClothRotation+FinalClothRotationOffset).GetNormalized():ClothRotation;
+    SetPartLocation(Cloth,ClothCenter); Cloth->SetRelativeRotation(PresentedRotation);
     SetPartScale(Cloth,ClothSize/100.f);
 }
 void AIndigoCraftPreview::ResetVisuals_Implementation()
@@ -164,8 +266,10 @@ void AIndigoCraftPreview::ResetVisuals_Implementation()
     MovingCloth->SetVisibility(false);
     FoldLine->SetVisibility(false);
     FoldPivot->SetRelativeTransform(FTransform::Identity);
+    UpperPlateCloseStart=FVector::ZeroVector; UpperPlateCloseDrop=0.f;
     SetPartLocation(LowerPlate,FVector(0,52,2)); SetPartScale(LowerPlate,FVector(.46,.44,.04));
     PlatePivot->SetRelativeLocation(FVector(-23,52,9)); PlatePivot->SetRelativeRotation(FRotator(110,0,0));
+    if(UpperPlate && LowerPlate) UpperPlate->SetRelativeRotation(LowerPlate->GetRelativeRotation());
     SetPartLocation(UpperPlate,FVector(23,0,0)); SetPartScale(UpperPlate,FVector(.46,.44,.035));
     SetPartLocation(LeftClamp,FVector(21,52,24)); SetPartLocation(RightClamp,FVector(-21,52,24));
     SetPartScale(LeftClamp,FVector(.06,.54,.05)); SetPartScale(RightClamp,FVector(.06,.54,.05));
@@ -232,6 +336,7 @@ void AIndigoCraftPreview::PlayIndigoAnimation_Implementation(FName Cue,int32 Tok
         SetPartScale(MovingCloth,HalfSize/100.f); MovingCloth->SetVisibility(true);
     }
     if (Cue==TEXT("PlaceCloth")) MoveStart=ClothCenter;
+    if (Cue==TEXT("ClosePlate")) PreparePlateClose();
     if (Cue==TEXT("Dye") || Cue==TEXT("Wash") || Cue==TEXT("Drain"))
     {
         DyeStartLocations.Empty();
@@ -251,7 +356,11 @@ void AIndigoCraftPreview::ApplyMotion(float T)
     }
     else if (ActiveCue==TEXT("PlaceCloth"))
         SetPartLocation(Cloth,FMath::Lerp(MoveStart,FVector(0,52,5.5),Smooth)+FVector(0,0,12.f*FMath::Sin(PI*T)));
-    else if (ActiveCue==TEXT("ClosePlate")) PlatePivot->SetRelativeRotation(FRotator(FMath::Lerp(110.f,0.f,Smooth),0,0));
+    else if (ActiveCue==TEXT("ClosePlate"))
+    {
+        PlatePivot->SetRelativeRotation(FRotator(FMath::Lerp(110.f,0.f,Smooth),0,0));
+        UpperPlate->SetRelativeLocation(UpperPlateCloseStart+FVector(0,0,UpperPlateCloseDrop*Smooth));
+    }
     else if (ActiveCue==TEXT("ClampLeft")) SetPartLocation(LeftClamp,FVector(21,52,FMath::Lerp(24.f,11.f,Smooth)));
     else if (ActiveCue==TEXT("ClampRight")) SetPartLocation(RightClamp,FVector(-21,52,FMath::Lerp(24.f,11.f,Smooth)));
     else if (ActiveCue==TEXT("UnclampLeft")) SetPartLocation(LeftClamp,FMath::Lerp(FVector(21,52,11),FVector(45,52,24),Smooth));
