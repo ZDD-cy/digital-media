@@ -95,5 +95,26 @@ bool FIndigoAuthoredAppearanceTest::RunTest(const FString& Parameters)
     Flow->Restart();TestTrue(TEXT("Restart also skips removed receipt"),Flow->Step==EIndigoStep::Select);
     World->DestroyWorld(false);return true;
 }
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FIndigoOldSamplePreviewTest,"Indigo.Workbench.OldSamplePreview",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
+bool FIndigoOldSamplePreviewTest::RunTest(const FString& Parameters)
+{
+    UWorld* World=UWorld::CreateWorld(EWorldType::Game,false);
+    auto* Director=World->SpawnActor<AIndigoDirector>();
+    auto* Bridge=World->SpawnActor<AIndigoWorkbenchBridge>();
+    Bridge->Director=Director;
+    Bridge->bGameStarted=true;
+    Bridge->bWorkbenchActive=true;
+    UIndigoFlowComponent* Flow=Director->Flow;Flow->bUsePlaceholderTimer=false;
+
+    TestTrue(TEXT("Read order before old sample"),Bridge->PerformAction(EIndigoAction::InspectOrder));
+    TestFalse(TEXT("Old sample popup is initially hidden"),Bridge->bOldSamplePreviewVisible);
+    TestTrue(TEXT("Inspect old sample action succeeds"),Bridge->PerformAction(EIndigoAction::InspectCloth));
+    TestTrue(TEXT("Inspect old sample opens the reference popup"),Bridge->bOldSamplePreviewVisible);
+    TestTrue(TEXT("Selection remains available after inspecting the old sample"),Flow->Step==EIndigoStep::Select);
+
+    TestTrue(TEXT("Selecting another component succeeds"),Bridge->SelectNextPattern(EIndigoPattern::A));
+    TestFalse(TEXT("Selecting another component closes the popup"),Bridge->bOldSamplePreviewVisible);
+    World->DestroyWorld(false);return true;
+}
 #endif
 

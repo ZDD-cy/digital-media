@@ -168,6 +168,12 @@ private:
     TObjectPtr<UHorizontalBox> ClothPreviewContent;
 
     UPROPERTY(Transient)
+    TObjectPtr<UBorder> OldSampleCard;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UHorizontalBox> OldSamplePreviewContent;
+
+    UPROPERTY(Transient)
     TObjectPtr<UTextBlock> ResultQuote;
 
     UPROPERTY(Transient)
@@ -285,6 +291,7 @@ private:
     void BuildTemperatureCard(UCanvasPanel* Canvas);
     void BuildActionPanel(UCanvasPanel* Canvas);
     void BuildResultCard(UCanvasPanel* Canvas);
+    void BuildOldSampleCard(UCanvasPanel* Canvas);
     void UpdateActions();
     void UpdateClothPreview();
     void UpdateAnimatedElements(float DeltaTime);

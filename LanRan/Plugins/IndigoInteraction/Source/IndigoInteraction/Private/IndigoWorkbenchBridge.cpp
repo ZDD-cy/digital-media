@@ -147,6 +147,7 @@ bool AIndigoWorkbenchBridge::CanSwitchWorkbenchCamera(EIndigoCamera Camera) cons
 }
 bool AIndigoWorkbenchBridge::SwitchWorkbenchCamera(EIndigoCamera Camera)
 {
+    DismissOldSamplePreview();
     if(!CanSwitchWorkbenchCamera(Camera)) return false;
     ApplyCamera(Camera); return true;
 }
@@ -203,6 +204,7 @@ void AIndigoWorkbenchBridge::QuitGame()
 }
 bool AIndigoWorkbenchBridge::SelectNextPattern(EIndigoPattern Pattern)
 {
+    DismissOldSamplePreview();
     UIndigoFlowComponent* Flow = GetFlow();
     if (!bGameStarted || !bWorkbenchActive || !Flow || Flow->Step != EIndigoStep::Select || Pattern == EIndigoPattern::None) return false;
     bool bLeft = false;
@@ -238,6 +240,7 @@ bool AIndigoWorkbenchBridge::EnterWorkbench()
 }
 void AIndigoWorkbenchBridge::LeaveWorkbench()
 {
+    DismissOldSamplePreview();
     if (!bWorkbenchActive) return;
     CancelDrag();
     bWorkbenchActive = false;
@@ -258,6 +261,7 @@ void AIndigoWorkbenchBridge::LeaveWorkbench()
 }
 bool AIndigoWorkbenchBridge::TryDrop(AIndigoInteractable* Source, AIndigoInteractable* Target)
 {
+    DismissOldSamplePreview();
     UIndigoFlowComponent* Flow = GetFlow();
     if (!bWorkbenchActive || !IsValid(Source) || !IsValid(Target) || !Target->Accepts(Source, Flow)) return false;
     return Flow->Step == EIndigoStep::Select ? Flow->SetPattern(Target->bLeftSlot, Source->Pattern) : Flow->Perform(Target->Action, Target->ActionIndex);
@@ -265,16 +269,25 @@ bool AIndigoWorkbenchBridge::TryDrop(AIndigoInteractable* Source, AIndigoInterac
 bool AIndigoWorkbenchBridge::PerformAction(EIndigoAction Action, int32 Index)
 {
     CancelDrag();
+    if (Action != EIndigoAction::InspectCloth) DismissOldSamplePreview();
     UIndigoFlowComponent* Flow = GetFlow();
     const bool Accepted = bWorkbenchActive && Flow && Flow->Perform(Action, Index);
+    if (Accepted && Action == EIndigoAction::InspectCloth) bOldSamplePreviewVisible = true;
     if(Accepted && Action==EIndigoAction::InspectCloth) HandleSubtitle(FText::FromString(TEXT("这块旧布角上的纹样，要为她留在中央。")));
     if(Accepted && Action==EIndigoAction::InspectOrder) HandleSubtitle(Flow->OrderFront);
     if (Widget) Widget->Refresh();
     return Accepted;
 }
+void AIndigoWorkbenchBridge::DismissOldSamplePreview()
+{
+    if (!bOldSamplePreviewVisible) return;
+    bOldSamplePreviewVisible = false;
+    if (Widget) Widget->Refresh();
+}
 void AIndigoWorkbenchBridge::RestartWorkbench()
 {
     if (!bWorkbenchActive || !GetFlow()) return;
+    DismissOldSamplePreview();
     CancelDrag(); CurrentSubtitle=FText::GetEmpty(); PendingSubtitle=FText::GetEmpty(); SubtitleRemaining=0.f; GetFlow()->Restart();
     // Retain the camera blend lock if restart is pressed while entering.
     GetFlow()->SetCameraBusy(BlendRemaining > 0.f);
@@ -336,6 +349,7 @@ void AIndigoWorkbenchBridge::Press()
     bEventPointer=FromEvent;
     UIndigoFlowComponent* Flow=GetFlow();
     AIndigoInteractable* Hit=TracePointer();
+    if (Hit && bOldSamplePreviewVisible && Hit->Action != EIndigoAction::InspectCloth) DismissOldSamplePreview();
     if (!Hit || !Hit->IsAvailable(Flow) || Hit->Kind==EIndigoInteractionKind::DropTarget) return;
     if (bEventPointer) PressPosition=EventPosition;
     else if (!Player->GetMousePosition(PressPosition.X,PressPosition.Y)) return;

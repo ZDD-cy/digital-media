@@ -147,6 +147,13 @@ namespace
             Image->SetColorAndOpacity(FLinearColor::White);
         }
     }
+
+    void SetPlainBlueImage(UImage* Image)
+    {
+        if (!Image) return;
+        Image->SetBrush(BoxBrush(FLinearColor(.075f, .22f, .46f, 1.f), FLinearColor::Transparent));
+        Image->SetColorAndOpacity(FLinearColor::White);
+    }
 }
 
 void UIndigoInterfaceWidget::SetBridge(AIndigoWorkbenchBridge* InBridge)
@@ -245,6 +252,7 @@ void UIndigoInterfaceWidget::BuildGameScreen()
     BuildTemperatureCard(Layer);
     BuildActionPanel(Layer);
     BuildResultCard(Layer);
+    BuildOldSampleCard(Layer);
 
     SubtitlePanel = WidgetTree->ConstructWidget<UBorder>();
     SubtitlePanel->SetBrushColor(FLinearColor(.015f, .06f, .12f, .88f));
@@ -484,7 +492,7 @@ void UIndigoInterfaceWidget::BuildActionPanel(UCanvasPanel* Canvas)
     ActionList = WidgetTree->ConstructWidget<UVerticalBox>();
     Inner->SetContent(ActionList);
 
-    ClothButton = AddActionButton(ActionList, TEXT("01"), TEXT("查看旧布"));
+    ClothButton = AddActionButton(ActionList, TEXT("01"), TEXT("查看旧样"));
     OrderButton = AddActionButton(ActionList, TEXT("02"), TEXT("查看委托单"));
     ConfirmButton = AddActionButton(ActionList, TEXT("→"), TEXT("确认搭配"));
     SwapButton = AddActionButton(ActionList, TEXT("↔"), TEXT("左右交换"));
@@ -592,6 +600,73 @@ void UIndigoInterfaceWidget::BuildResultCard(UCanvasPanel* Canvas)
     ResultQuote = MakeText(WidgetTree, TEXT("「 一缸一染，皆有温度 」"), 14, MutedInk);
     ResultQuote->SetJustification(ETextJustify::Center);
     UVerticalBoxSlot* QuoteSlot = Column->AddChildToVerticalBox(ResultQuote);
+    QuoteSlot->SetHorizontalAlignment(HAlign_Center);
+    QuoteSlot->SetPadding(FMargin(0.f, 18.f, 0.f, 0.f));
+}
+
+void UIndigoInterfaceWidget::BuildOldSampleCard(UCanvasPanel* Canvas)
+{
+    UBorder* Outer = WidgetTree->ConstructWidget<UBorder>();
+    Outer->SetBrushColor(Bronze);
+    Outer->SetPadding(FMargin(4.f));
+    OldSampleCard = Outer;
+    AddCanvas(Canvas, OldSampleCard, FAnchors(.5f, .5f), FVector2D(.5f, .5f), FVector2D(0.f, 12.f), FVector2D(610.f, 430.f), false, 15);
+
+    UBorder* Inner = WidgetTree->ConstructWidget<UBorder>();
+    Inner->SetBrushColor(Paper);
+    Inner->SetPadding(FMargin(28.f, 20.f));
+    Outer->SetContent(Inner);
+    UVerticalBox* Column = WidgetTree->ConstructWidget<UVerticalBox>();
+    Inner->SetContent(Column);
+
+    UTextBlock* Eyebrow = MakeText(WidgetTree, TEXT("旧 样 参 考"), 12, Bronze);
+    Eyebrow->SetJustification(ETextJustify::Center);
+    UVerticalBoxSlot* EyebrowSlot = Column->AddChildToVerticalBox(Eyebrow);
+    EyebrowSlot->SetHorizontalAlignment(HAlign_Center);
+
+    UTextBlock* Title = MakeText(WidgetTree, TEXT("旧 样"), 48, Navy, true);
+    Title->SetJustification(ETextJustify::Center);
+    UVerticalBoxSlot* TitleSlot = Column->AddChildToVerticalBox(Title);
+    TitleSlot->SetHorizontalAlignment(HAlign_Center);
+    TitleSlot->SetPadding(FMargin(0.f, 4.f, 0.f, 16.f));
+
+    UBorder* PreviewOuter = WidgetTree->ConstructWidget<UBorder>();
+    PreviewOuter->SetBrushColor(Bronze);
+    PreviewOuter->SetPadding(FMargin(8.f));
+    UVerticalBoxSlot* PreviewSlot = Column->AddChildToVerticalBox(PreviewOuter);
+    PreviewSlot->SetHorizontalAlignment(HAlign_Fill);
+
+    UBorder* PreviewInner = WidgetTree->ConstructWidget<UBorder>();
+    PreviewInner->SetBrushColor(Navy);
+    PreviewInner->SetPadding(FMargin(16.f));
+    PreviewOuter->SetContent(PreviewInner);
+
+    OldSamplePreviewContent = WidgetTree->ConstructWidget<UHorizontalBox>();
+    PreviewInner->SetContent(OldSamplePreviewContent);
+    for (int32 Index = 0; Index < 3; ++Index)
+    {
+        UVerticalBox* Piece = WidgetTree->ConstructWidget<UVerticalBox>();
+        UHorizontalBoxSlot* PieceSlot = OldSamplePreviewContent->AddChildToHorizontalBox(Piece);
+        PieceSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+        PieceSlot->SetPadding(FMargin(5.f));
+
+        USizeBox* Size = WidgetTree->ConstructWidget<USizeBox>();
+        Size->SetHeightOverride(126.f);
+        UImage* Image = WidgetTree->ConstructWidget<UImage>();
+        if (Index == 1) SetPatternImage(Image, EIndigoPattern::B);
+        else SetPlainBlueImage(Image);
+        Size->SetContent(Image);
+        UVerticalBoxSlot* ImageSlot = Piece->AddChildToVerticalBox(Size);
+        ImageSlot->SetHorizontalAlignment(HAlign_Fill);
+
+        UTextBlock* Label = MakeText(WidgetTree, Index == 1 ? TEXT("中心旧样") : TEXT("纯蓝"), 11, Paper);
+        Label->SetJustification(ETextJustify::Center);
+        Piece->AddChildToVerticalBox(Label);
+    }
+
+    UTextBlock* Quote = MakeText(WidgetTree, TEXT("「 旧样留一处，其余花纹由你决定 」"), 14, MutedInk);
+    Quote->SetJustification(ETextJustify::Center);
+    UVerticalBoxSlot* QuoteSlot = Column->AddChildToVerticalBox(Quote);
     QuoteSlot->SetHorizontalAlignment(HAlign_Center);
     QuoteSlot->SetPadding(FMargin(0.f, 18.f, 0.f, 0.f));
 }
@@ -819,6 +894,7 @@ void UIndigoInterfaceWidget::Refresh()
     // Reveal is a scene-only presentation. Keep the finished-work popup for End.
     const bool bResult = Flow->Step == EIndigoStep::End;
     ResultCard->SetVisibility(bResult ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+    OldSampleCard->SetVisibility(Bridge->bOldSamplePreviewVisible ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
     if (bResult)
     {
         ResultTitle->SetText(FText::FromString(TEXT("染 成")));
