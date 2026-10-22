@@ -21,6 +21,7 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") int32 FoldIndex = 0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") bool bAnimationBusy = false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") bool bCameraBusy = false;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo") bool bSkipReceipt = false;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|P1") bool bEnableTemperatureRules = false;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|P1") bool bEnableDeliveryStory = false;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|Story", meta=(ClampMin="0")) float DeliveryReadingSeconds = 8.f;

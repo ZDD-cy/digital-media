@@ -39,7 +39,7 @@ bool FIndigoDyeTest::RunTest(const FString& Parameters)
             const int32 Token=F->GetAnimationToken();
             Rig->Tick(2.f);
             TestEqual(TEXT("Immersion alone does not count"),F->Result.Depth,D);
-            TestTrue(TEXT("Assembly actually enters basin"),Rig->LowerPlate->GetRelativeLocation().Z<Home.Z-20.f);
+            TestTrue(TEXT("Assembly enters the enlarged basin below its water surface"),Rig->LowerPlate->GetRelativeLocation().X>Home.X+100.f && Rig->LowerPlate->GetRelativeLocation().Z<Rig->DyeWater->GetRelativeLocation().Z-5.f);
             TestFalse(TEXT("Rapid repeat rejected"),Bridge->PerformAction(EIndigoAction::Dye));
             TestFalse(TEXT("Cannot finish halfway"),Bridge->PerformAction(EIndigoAction::FinishDye));
             Rig->Tick(1.f);

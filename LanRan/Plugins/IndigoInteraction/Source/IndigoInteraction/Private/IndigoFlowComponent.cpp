@@ -213,7 +213,7 @@ void UIndigoFlowComponent::Restart()
     DeliveryOpenedAt=0.f;
     for (AActor* Target : VisualTargets)
         if (IsValid(Target) && Target->Implements<UIndigoVisualInterface>()) IIndigoVisualInterface::Execute_ResetVisuals(Target);
-    Enter(EIndigoStep::Receive); OnResultChanged.Broadcast(Result);
+    Enter(bSkipReceipt ? EIndigoStep::Select : EIndigoStep::Receive); OnResultChanged.Broadcast(Result);
 }
 
 void UIndigoFlowComponent::EndPlay(const EEndPlayReason::Type Reason)

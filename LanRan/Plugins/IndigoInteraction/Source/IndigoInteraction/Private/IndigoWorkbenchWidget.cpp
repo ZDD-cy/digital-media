@@ -173,6 +173,8 @@ void UIndigoWorkbenchWidget::Refresh()
     Help->SetText(FText::FromString(Instruction));
     if(F->Step==EIndigoStep::Dye && !F->bAnimationBusy && F->bEnableTemperatureRules && F->Temperature==EIndigoTemperature::Cold && F->Result.Depth<4)
         Help->SetText(FText::FromString(F->Result.Depth>0?TEXT("缸温偏冷。继续染前需添一份谷壳补温；也可以直接收工。"):TEXT("缸温偏冷，先添一份谷壳，补温后才能入染。")));
+    Cloth->SetVisibility(F->bSkipReceipt?ESlateVisibility::Collapsed:ESlateVisibility::Visible);
+    Order->SetVisibility(F->bSkipReceipt?ESlateVisibility::Collapsed:ESlateVisibility::Visible);
     Cloth->SetIsEnabled(F->CanPerform(EIndigoAction::InspectCloth)); Order->SetIsEnabled(F->CanPerform(EIndigoAction::InspectOrder));
     Swap->SetIsEnabled(F->CanPerform(EIndigoAction::Swap)); ClearLeft->SetIsEnabled(F->CanPerform(EIndigoAction::ClearLeft));
     ClearRight->SetIsEnabled(F->CanPerform(EIndigoAction::ClearRight));Confirm->SetIsEnabled(F->CanPerform(EIndigoAction::Confirm));

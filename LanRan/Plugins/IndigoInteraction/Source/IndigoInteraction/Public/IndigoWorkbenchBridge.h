@@ -39,9 +39,9 @@ public:
     UFUNCTION(BlueprintPure, Category="Indigo") UIndigoFlowComponent* GetFlow() const;
     UFUNCTION(BlueprintPure, Category="Indigo|Camera") bool CanSwitchWorkbenchCamera(EIndigoCamera Camera) const;
     UFUNCTION(BlueprintCallable, Category="Indigo|Camera") bool SwitchWorkbenchCamera(EIndigoCamera Camera);
-    bool PointerDown(FVector2D Position);
-    void PointerMove(FVector2D Position);
-    void PointerUp(FVector2D Position);
+    UFUNCTION(BlueprintCallable, Category="Indigo|Pointer") bool PointerDown(FVector2D Position);
+    UFUNCTION(BlueprintCallable, Category="Indigo|Pointer") void PointerMove(FVector2D Position);
+    UFUNCTION(BlueprintCallable, Category="Indigo|Pointer") void PointerUp(FVector2D Position);
     virtual void Tick(float DeltaSeconds) override;
 protected:
     virtual void BeginPlay() override;

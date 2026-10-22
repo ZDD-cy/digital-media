@@ -4,6 +4,7 @@
 #include "IndigoFlowComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
+#include "Engine/StaticMesh.h"
 #include "Misc/AutomationTest.h"
 #include "UObject/Script.h"
 
@@ -66,12 +67,38 @@ bool FIndigoCraftTest::RunTest(const FString& Parameters)
     Bridge->PerformAction(EIndigoAction::Fold,0); const int32 CancelledToken=F->GetAnimationToken(); Preview->Tick(.4f);
     Bridge->RestartWorkbench(); Preview->Tick(2.f);
     TestTrue(TEXT("Restart hides rig and resets pose"),Preview->IsHidden() && Preview->CompletedFolds==0 && !Preview->MovingCloth->IsVisible());
-    TestTrue(TEXT("Restart restores cloth size"),Preview->Cloth->GetRelativeScale3D().Equals(FVector(1.08,.76,.0035),.0001));
+    TestTrue(TEXT("Restart restores cloth dimensions with authored yaw"),Preview->Cloth->GetStaticMesh()->GetBounds().TransformBy(Preview->Cloth->GetComponentTransform()).BoxExtent.Equals(FVector(54,38,.175),.001));
     Select(); Bridge->PerformAction(EIndigoAction::Fold,0);
     TestFalse(TEXT("Cancelled run cannot complete new motion"),F->CompleteAnimation(CancelledToken));
     Preview->Tick(1.1f);
     TestEqual(TEXT("New run folds once"),F->FoldIndex,1);
     Bridge->bWorkbenchActive=false; World->DestroyWorld(false);
     return true;
+}
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FIndigoFoldClearanceTest,"Indigo.Workbench.FoldSurfaceClearance",EAutomationTestFlags::EditorContext|EAutomationTestFlags::EngineFilter)
+bool FIndigoFoldClearanceTest::RunTest(const FString& Parameters)
+{
+    FEditorScriptExecutionGuard Guard;
+    UWorld* World=UWorld::CreateWorld(EWorldType::Game,false);
+    auto* Director=World->SpawnActor<AIndigoDirector>();auto* Rig=World->SpawnActor<AIndigoCraftPreview>();
+    auto* Flow=Director->Flow.Get();Rig->Flow=Flow;Flow->VisualTargets.Add(Rig);Flow->bUsePlaceholderTimer=false;Flow->bSkipReceipt=true;
+    auto* Plane=LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Plane.Plane"));
+    Rig->Cloth->SetStaticMesh(Plane);Rig->MovingCloth->SetStaticMesh(Plane);Rig->MotionSeconds=1.f;
+    Flow->Restart();Flow->SetPattern(true,EIndigoPattern::A);Flow->SetPattern(false,EIndigoPattern::B);Flow->Perform(EIndigoAction::Confirm);
+    for(int32 Fold=0;Fold<3;++Fold)
+    {
+        const float RestZ=Plane->GetBoundingBox().TransformBy(Rig->Cloth->GetComponentTransform()).Min.Z;
+        TestTrue(TEXT("Start fold"),Flow->Perform(EIndigoAction::Fold,Fold));
+        for(int32 Sample=0;Sample<19;++Sample)
+        {
+            Rig->Tick(.05f);
+            const FBox Moving=Plane->GetBoundingBox().TransformBy(Rig->MovingCloth->GetComponentTransform());
+            TestTrue(TEXT("Folded sheet never goes below the resting layer"),Moving.Min.Z>=RestZ-.001f);
+        }
+        Rig->Tick(.1f);
+    }
+    TestTrue(TEXT("Three safe folds complete"),Flow->Step==EIndigoStep::Clamp);
+    TestTrue(TEXT("Screen-left clamp is positive X for the workbench cameras"),Rig->LeftClamp->GetRelativeLocation().X>Rig->RightClamp->GetRelativeLocation().X);
+    World->DestroyWorld(false);return true;
 }
 #endif

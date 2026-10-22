@@ -9,6 +9,69 @@
 #include "IndigoCraftHandle.h"
 #include "Engine/World.h"
 
+FVector AIndigoCraftPreview::PartCenter(USceneComponent* Part) const
+{
+    if(const FVector* Center=PartCenters.Find(Part)) return *Center;
+    return Part->GetRelativeLocation();
+}
+void AIndigoCraftPreview::SetPartLocation(USceneComponent* Part,const FVector& Center)
+{
+    PartCenters.Add(Part,Center);
+    FVector Offset=FVector::ZeroVector;
+    if(auto* Mesh=Cast<UStaticMeshComponent>(Part)) if(Mesh->GetStaticMesh())
+        Offset=Part->GetRelativeRotation().RotateVector(Mesh->GetStaticMesh()->GetBounds().Origin*Part->GetRelativeScale3D());
+    Part->SetRelativeLocation(Center-Offset);
+}
+void AIndigoCraftPreview::SetPartScale(UStaticMeshComponent* Part,const FVector& CanonicalScale)
+{
+    const FVector Center=PartCenter(Part);
+    const FVector Size=Part->GetStaticMesh()?Part->GetStaticMesh()->GetBounds().BoxExtent*2.f:FVector(100.f);
+    // Convert desired table-space dimensions to the authored mesh's local axes.
+    const FVector LocalSize=Part->GetRelativeRotation().UnrotateVector(CanonicalScale*100.f).GetAbs();
+    Part->SetRelativeScale3D(LocalSize/Size.ComponentMax(FVector(.001f)));
+    SetPartLocation(Part,Center);
+}
+float AIndigoCraftPreview::ColorDepthForStage(int32 Depth)
+{
+    const float Values[]={10.f,4.f,1.f,.1f,.03f};
+    return Values[FMath::Clamp(Depth,0,4)];
+}
+FVector AIndigoCraftPreview::BasinMotion(float T,bool bWash) const
+{
+    const float Side=bWash?-BasinDistance:BasinDistance;
+    const FVector Home=FVector::ZeroVector,Up(0,0,80),Across(Side,0,80),Inside(Side,0,28);
+    const auto Ease=[](float V){V=FMath::Clamp(V,0.f,1.f);return V*V*(3.f-2.f*V);};
+    if(T<.12f) return FMath::Lerp(Home,Up,Ease(T/.12f));
+    if(T<.25f) return FMath::Lerp(Up,Across,Ease((T-.12f)/.13f));
+    if(T<.4f) return FMath::Lerp(Across,Inside,Ease((T-.25f)/.15f));
+    if(T<.55f) return Inside+FVector(0,0,bWash?2.f*FMath::Sin((T-.4f)/.15f*2.f*PI):0.f);
+    if(T<.7f) return FMath::Lerp(Inside,Across,Ease((T-.55f)/.15f));
+    if(T<.85f) return FMath::Lerp(Across,Up,Ease((T-.7f)/.15f));
+    return FMath::Lerp(Up,Home,Ease((T-.85f)/.15f));
+}
+void AIndigoCraftPreview::UpdateClothParameters()
+{
+    const FIndigoResult& Result=Flow?Flow->Result:DisplayedResult;
+    const float Left=FMath::Max(1,static_cast<int32>(Result.Left));
+    const float Right=FMath::Max(1,static_cast<int32>(Result.Right));
+    const float Depth=FMath::Lerp(ColorDepthForStage(PreviewDepth),ColorDepthForStage(PreviewDepth+1),DyeProgress);
+    const FLinearColor Shades[]={FLinearColor(.92f,.93f,.90f),FLinearColor(.12f,.29f,.52f),FLinearColor(.035f,.12f,.32f),FLinearColor(.012f,.045f,.16f),FLinearColor(.004f,.012f,.065f)};
+    const FLinearColor Color=FMath::Lerp(Shades[PreviewDepth],Shades[FMath::Min(4,PreviewDepth+1)],DyeProgress);
+    for(UMaterialInstanceDynamic* Material:{ClothMaterial.Get(),SwatchMaterial.Get(),TrialMaterial.Get()}) if(Material)
+    {
+        Material->SetScalarParameterValue(TEXT("SelectIndex"),Left);
+        Material->SetScalarParameterValue(TEXT("SelectIndex1"),Left);
+        Material->SetScalarParameterValue(TEXT("SelectIndex2"),1.f);
+        Material->SetScalarParameterValue(TEXT("SelectIndex3"),Right);
+        Material->SetScalarParameterValue(TEXT("ColorDepth"),Depth);
+        Material->SetScalarParameterValue(TEXT("RevealPattern"),Material==ClothMaterial.Get() && bUnfolded?1.f:0.f);
+        // The authored graph multiplies ClothBaseColor by ColorDepth. Feed the
+        // actual graph, not just the obsolete DyeColor parameter.
+        Material->SetVectorParameterValue(TEXT("ClothBaseColor"),Color/FMath::Max(.001f,Depth));
+        Material->SetVectorParameterValue(TEXT("ClothFigureColor"),FLinearColor(.92f,.93f,.90f,1.f));
+    }
+}
+
 AIndigoCraftPreview::AIndigoCraftPreview()
 {
     PrimaryActorTick.bCanEverTick=true;
@@ -61,7 +124,7 @@ void AIndigoCraftPreview::UpdateHandles()
         { Actions[0]=EIndigoAction::ClosePlate;Sources[0]=UpperPlate->GetComponentLocation()-GetActorLocation()+FVector(0,0,7);Targets[0]=FVector(0,52,13); }
         else
         { Count=2;Actions[0]=EIndigoAction::ClampLeft;Actions[1]=EIndigoAction::ClampRight;
-          Sources[0]=FVector(-45,52,35);Sources[1]=FVector(45,52,35);Targets[0]=FVector(-21,52,20);Targets[1]=FVector(21,52,20); }
+          Sources[0]=FVector(45,52,35);Sources[1]=FVector(-45,52,35);Targets[0]=FVector(21,52,20);Targets[1]=FVector(-21,52,20); }
     }
     for(int32 I=0;I<2;++I) for(int32 J=0;J<2;++J)
     {
@@ -73,6 +136,8 @@ void AIndigoCraftPreview::UpdateHandles()
 void AIndigoCraftPreview::BeginPlay()
 {
     Super::BeginPlay();
+    if(RuntimeClothMaterial)
+        for(auto* Part:{Cloth.Get(),MovingCloth.Get(),DyeSwatch.Get(),TrialCloth.Get()}) Part->SetMaterial(0,RuntimeClothMaterial);
     ClothMaterial=Cloth->CreateDynamicMaterialInstance(0);
     if(ClothMaterial) MovingCloth->SetMaterial(0,ClothMaterial);
     SwatchMaterial=DyeSwatch->CreateDynamicMaterialInstance(0);
@@ -86,11 +151,12 @@ void AIndigoCraftPreview::BeginPlay()
 }
 void AIndigoCraftPreview::PoseCloth()
 {
-    Cloth->SetRelativeLocation(ClothCenter); Cloth->SetRelativeRotation(FRotator::ZeroRotator);
-    Cloth->SetRelativeScale3D(ClothSize/100.f);
+    SetPartLocation(Cloth,ClothCenter); Cloth->SetRelativeRotation(ClothRotation);
+    SetPartScale(Cloth,ClothSize/100.f);
 }
 void AIndigoCraftPreview::ResetVisuals_Implementation()
 {
+    PartCenters.Empty();
     MotionToken=0; ActiveCue=NAME_None; Elapsed=0.f;
     CompletedFolds=0; bPlaced=bClosed=bLeftClamped=bRightClamped=false;
     bUnfolded=false; DisplayedResult=FIndigoResult();
@@ -98,23 +164,23 @@ void AIndigoCraftPreview::ResetVisuals_Implementation()
     MovingCloth->SetVisibility(false);
     FoldLine->SetVisibility(false);
     FoldPivot->SetRelativeTransform(FTransform::Identity);
-    LowerPlate->SetRelativeLocation(FVector(0,52,2)); LowerPlate->SetRelativeScale3D(FVector(.46,.44,.04));
+    SetPartLocation(LowerPlate,FVector(0,52,2)); SetPartScale(LowerPlate,FVector(.46,.44,.04));
     PlatePivot->SetRelativeLocation(FVector(-23,52,9)); PlatePivot->SetRelativeRotation(FRotator(110,0,0));
-    UpperPlate->SetRelativeLocation(FVector(23,0,0)); UpperPlate->SetRelativeScale3D(FVector(.46,.44,.035));
-    LeftClamp->SetRelativeLocation(FVector(-21,52,24)); RightClamp->SetRelativeLocation(FVector(21,52,24));
-    LeftClamp->SetRelativeScale3D(FVector(.06,.54,.05)); RightClamp->SetRelativeScale3D(FVector(.06,.54,.05));
-    DyeBasin->SetRelativeLocation(FVector(96,52,-25)); DyeBasin->SetRelativeScale3D(FVector(.66,.66,.4));
-    DyeWater->SetRelativeLocation(FVector(96,52,-4)); DyeWater->SetRelativeScale3D(FVector(.64,.64,.01));
-    DyeSwatch->SetRelativeLocation(FVector(0,-28,16)); DyeSwatch->SetRelativeScale3D(FVector(.48,.32,.005)); DyeSwatch->SetVisibility(false);
+    SetPartLocation(UpperPlate,FVector(23,0,0)); SetPartScale(UpperPlate,FVector(.46,.44,.035));
+    SetPartLocation(LeftClamp,FVector(21,52,24)); SetPartLocation(RightClamp,FVector(-21,52,24));
+    SetPartScale(LeftClamp,FVector(.06,.54,.05)); SetPartScale(RightClamp,FVector(.06,.54,.05));
+    SetPartLocation(DyeBasin,FVector(BasinDistance,52,28)); SetPartScale(DyeBasin,FVector(BasinDiameter/100.f,BasinDiameter/100.f,.56));
+    SetPartLocation(DyeWater,FVector(BasinDistance,52,53)); SetPartScale(DyeWater,FVector((BasinDiameter-10.f)/100.f,(BasinDiameter-10.f)/100.f,.01));
+    SetPartLocation(DyeSwatch,FVector(0,-28,16)); SetPartScale(DyeSwatch,FVector(.48,.32,.005)); DyeSwatch->SetVisibility(false);
     DyeBasin->SetVisibility(false); DyeWater->SetVisibility(false); DyeStartLocations.Empty();
-    WashBasin->SetRelativeLocation(FVector(-96,52,-25)); WashBasin->SetRelativeScale3D(FVector(.66,.66,.4));
-    WashWater->SetRelativeLocation(FVector(-96,52,-4)); WashWater->SetRelativeScale3D(FVector(.64,.64,.01));
+    SetPartLocation(WashBasin,FVector(-BasinDistance,52,28)); SetPartScale(WashBasin,FVector(BasinDiameter/100.f,BasinDiameter/100.f,.56));
+    SetPartLocation(WashWater,FVector(-BasinDistance,52,53)); SetPartScale(WashWater,FVector((BasinDiameter-10.f)/100.f,(BasinDiameter-10.f)/100.f,.01));
     WashBasin->SetVisibility(false); WashWater->SetVisibility(false);
-    TrialCloth->SetRelativeLocation(FVector(96,-6,18));TrialCloth->SetRelativeScale3D(FVector(.22,.10,.005));TrialCloth->SetVisibility(false);
+    SetPartLocation(TrialCloth,FVector(BasinDistance,-6,18));SetPartScale(TrialCloth,FVector(.22,.10,.005));TrialCloth->SetVisibility(false);
     if(TrialMaterial) TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FLinearColor(.8,.85,.76));
     for(int32 I=0;I<FuelMarkers.Num();++I)
     {
-        FuelMarkers[I]->SetRelativeLocation(FVector(62+I*14,104,5));FuelMarkers[I]->SetRelativeScale3D(FVector(.10,.12,.10));FuelMarkers[I]->SetVisibility(false);
+        SetPartLocation(FuelMarkers[I],FVector(62+I*14,104,5));SetPartScale(FuelMarkers[I],FVector(.10,.12,.10));FuelMarkers[I]->SetVisibility(false);
     }
     if(ClothMaterial)
     {
@@ -147,6 +213,7 @@ void AIndigoCraftPreview::SetDyeProgress_Implementation(int32 CompletedDepth,flo
     const FLinearColor Color=FMath::Lerp(Shades[PreviewDepth],Shades[FMath::Min(4,PreviewDepth+1)],DyeProgress);
     if(ClothMaterial) ClothMaterial->SetVectorParameterValue(TEXT("DyeColor"),Color);
     if(SwatchMaterial) SwatchMaterial->SetVectorParameterValue(TEXT("DyeColor"),Color);
+    UpdateClothParameters();
 }
 void AIndigoCraftPreview::PlayIndigoAnimation_Implementation(FName Cue,int32 Token)
 {
@@ -159,16 +226,16 @@ void AIndigoCraftPreview::PlayIndigoAnimation_Implementation(FName Cue,int32 Tok
         bFoldX=CompletedFolds%2==0;
         const FVector HalfSize=ClothSize* (bFoldX?FVector(.5,1,1):FVector(1,.5,1));
         const FVector Offset=bFoldX?FVector(ClothSize.X*.25,0,0):FVector(0,ClothSize.Y*.25,0);
-        FoldPivot->SetRelativeLocation(ClothCenter); FoldPivot->SetRelativeRotation(FRotator::ZeroRotator);
-        Cloth->SetRelativeLocation(ClothCenter-Offset); Cloth->SetRelativeScale3D(HalfSize/100.f);
-        MovingCloth->SetRelativeLocation(Offset); MovingCloth->SetRelativeRotation(FRotator::ZeroRotator);
-        MovingCloth->SetRelativeScale3D(HalfSize/100.f); MovingCloth->SetVisibility(true);
+        FoldPivot->SetRelativeLocation(ClothCenter+FVector(0,0,ClothSize.Z*.5f)); FoldPivot->SetRelativeRotation(FRotator::ZeroRotator);
+        SetPartLocation(Cloth,ClothCenter-Offset); SetPartScale(Cloth,HalfSize/100.f);
+        SetPartLocation(MovingCloth,Offset-FVector(0,0,ClothSize.Z*.5f)); MovingCloth->SetRelativeRotation(ClothRotation);
+        SetPartScale(MovingCloth,HalfSize/100.f); MovingCloth->SetVisibility(true);
     }
     if (Cue==TEXT("PlaceCloth")) MoveStart=ClothCenter;
     if (Cue==TEXT("Dye") || Cue==TEXT("Wash") || Cue==TEXT("Drain"))
     {
         DyeStartLocations.Empty();
-        for(USceneComponent* Part:DyeParts()) DyeStartLocations.Add(Part->GetRelativeLocation());
+        for(USceneComponent* Part:DyeParts()) DyeStartLocations.Add(PartCenter(Part));
         SetDyeProgress_Implementation(Flow->Result.Depth,0.f);
     }
     if(Cue==TEXT("Unfold")) { MoveStart=ClothCenter; UnfoldStartSize=ClothSize; }
@@ -180,23 +247,23 @@ void AIndigoCraftPreview::ApplyMotion(float T)
     if (ActiveCue==TEXT("Fold"))
     {
         FoldPivot->SetRelativeRotation(FQuat(bFoldX?FVector::YAxisVector:FVector::XAxisVector,(bFoldX?-1.f:1.f)*PI*Smooth));
-        MovingCloth->SetRelativeLocation((bFoldX?FVector(ClothSize.X*.25,0,0):FVector(0,ClothSize.Y*.25,0))+FVector(0,0,ClothSize.Z*Smooth));
+        SetPartLocation(MovingCloth,(bFoldX?FVector(ClothSize.X*.25,0,0):FVector(0,ClothSize.Y*.25,0))-FVector(0,0,ClothSize.Z*.5f));
     }
     else if (ActiveCue==TEXT("PlaceCloth"))
-        Cloth->SetRelativeLocation(FMath::Lerp(MoveStart,FVector(0,52,5.5),Smooth)+FVector(0,0,12.f*FMath::Sin(PI*T)));
+        SetPartLocation(Cloth,FMath::Lerp(MoveStart,FVector(0,52,5.5),Smooth)+FVector(0,0,12.f*FMath::Sin(PI*T)));
     else if (ActiveCue==TEXT("ClosePlate")) PlatePivot->SetRelativeRotation(FRotator(FMath::Lerp(110.f,0.f,Smooth),0,0));
-    else if (ActiveCue==TEXT("ClampLeft")) LeftClamp->SetRelativeLocation(FVector(-21,52,FMath::Lerp(24.f,11.f,Smooth)));
-    else if (ActiveCue==TEXT("ClampRight")) RightClamp->SetRelativeLocation(FVector(21,52,FMath::Lerp(24.f,11.f,Smooth)));
-    else if (ActiveCue==TEXT("UnclampLeft")) LeftClamp->SetRelativeLocation(FMath::Lerp(FVector(-21,52,11),FVector(-45,52,24),Smooth));
-    else if (ActiveCue==TEXT("UnclampRight")) RightClamp->SetRelativeLocation(FMath::Lerp(FVector(21,52,11),FVector(45,52,24),Smooth));
+    else if (ActiveCue==TEXT("ClampLeft")) SetPartLocation(LeftClamp,FVector(21,52,FMath::Lerp(24.f,11.f,Smooth)));
+    else if (ActiveCue==TEXT("ClampRight")) SetPartLocation(RightClamp,FVector(-21,52,FMath::Lerp(24.f,11.f,Smooth)));
+    else if (ActiveCue==TEXT("UnclampLeft")) SetPartLocation(LeftClamp,FMath::Lerp(FVector(21,52,11),FVector(45,52,24),Smooth));
+    else if (ActiveCue==TEXT("UnclampRight")) SetPartLocation(RightClamp,FMath::Lerp(FVector(-21,52,11),FVector(-45,52,24),Smooth));
     else if (ActiveCue==TEXT("Wash") || ActiveCue==TEXT("Drain"))
     {
         FVector Offset;
         if(ActiveCue==TEXT("Wash"))
-            Offset=FVector(-96*FMath::Sin(PI*T),0,-28*FMath::Sin(PI*T)+3*FMath::Sin(6*PI*T));
+            Offset=BasinMotion(T,true);
         else Offset=FVector(0,0,22*FMath::Sin(PI*T));
         const auto Parts=DyeParts();
-        if(DyeStartLocations.Num()==Parts.Num()) for(int32 I=0;I<Parts.Num();++I) Parts[I]->SetRelativeLocation(DyeStartLocations[I]+Offset);
+        if(DyeStartLocations.Num()==Parts.Num()) for(int32 I=0;I<Parts.Num();++I) SetPartLocation(Parts[I],DyeStartLocations[I]+Offset);
     }
     else if (ActiveCue==TEXT("Unfold"))
     {
@@ -208,35 +275,29 @@ void AIndigoCraftPreview::ApplyMotion(float T)
         const float Y=FMath::Clamp(U*3.f-1.f,0.f,1.f);
         ClothSize=UnfoldStartSize*FVector(FMath::Pow(2.f,X),FMath::Pow(2.f,Y),FMath::Pow(.5f,X+Y)); PoseCloth();
     }
-    else if (ActiveCue==TEXT("Deliver")) Cloth->SetRelativeLocation(ClothCenter+FVector(0,0,6*FMath::Sin(PI*T)));
+    else if (ActiveCue==TEXT("Deliver")) SetPartLocation(Cloth,ClothCenter+FVector(0,0,6*FMath::Sin(PI*T)));
     else if (ActiveCue==TEXT("Ship"))
     {
-        Cloth->SetRelativeLocation(ClothCenter+FVector(0,70*Smooth,4*FMath::Sin(PI*T)));
-        Cloth->SetRelativeScale3D(FMath::Lerp(FVector(1.08,.76,.0035),FVector(.54,.38,.014),Smooth));
+        SetPartLocation(Cloth,ClothCenter+FVector(0,70*Smooth,4*FMath::Sin(PI*T)));
+        SetPartScale(Cloth,FMath::Lerp(FVector(1.08,.76,.0035),FVector(.54,.38,.014),Smooth));
     }
-    else if (ActiveCue==TEXT("ScoopTest")) TrialCloth->SetRelativeLocation(FVector(96,-6+30*FMath::Sin(PI*T),18));
-    else if (ActiveCue==TEXT("DipTest")) TrialCloth->SetRelativeLocation(FMath::Lerp(FVector(96,-6,18),FVector(96,52,-8),Smooth));
-    else if (ActiveCue==TEXT("LiftTest")) TrialCloth->SetRelativeLocation(FMath::Lerp(FVector(96,52,-8),FVector(96,-6,18),Smooth));
+    else if (ActiveCue==TEXT("ScoopTest")) SetPartLocation(TrialCloth,FVector(BasinDistance,-6+30*FMath::Sin(PI*T),18));
+    else if (ActiveCue==TEXT("DipTest")) SetPartLocation(TrialCloth,FMath::Lerp(FVector(BasinDistance,-6,18),FVector(BasinDistance,52,46),Smooth));
+    else if (ActiveCue==TEXT("LiftTest")) SetPartLocation(TrialCloth,FMath::Lerp(FVector(BasinDistance,52,46),FVector(BasinDistance,-6,18),Smooth));
     else if (ActiveCue==TEXT("OxidizeTest") && TrialMaterial)
         TrialMaterial->SetVectorParameterValue(TEXT("DyeColor"),FMath::Lerp(FLinearColor(.8,.85,.76),Flow->Temperature==EIndigoTemperature::Ready?FLinearColor(.065,.2,.44):FLinearColor(.48,.57,.53),Smooth));
     else if (ActiveCue==TEXT("AddFuel"))
     {
         const int32 Index=FMath::Clamp(Flow->Fuel,0,FuelMarkers.Num()-1);
-        FuelMarkers[Index]->SetRelativeLocation(FVector(62+Index*14,104,5)+FVector(0,-52*Smooth,-12*Smooth));
+        SetPartLocation(FuelMarkers[Index],FVector(62+Index*14,104,5)+FVector(0,-52*Smooth,-12*Smooth));
         FuelMarkers[Index]->SetVisibility(T<.9f);
     }
     else if (ActiveCue==TEXT("Dye"))
     {
-        // Lift, immerse, hold, lift to oxidize, then return. One complete cycle is one depth.
-        const auto Ease=[](float V){V=FMath::Clamp(V,0.f,1.f);return V*V*(3.f-2.f*V);};
-        FVector Offset;
-        if(T<.2f) Offset=FMath::Lerp(FVector::ZeroVector,FVector(96,0,30),Ease(T/.2f));
-        else if(T<.45f) Offset=FMath::Lerp(FVector(96,0,30),FVector(96,0,-28),Ease((T-.2f)/.25f));
-        else if(T<.6f) Offset=FVector(96,0,-28);
-        else if(T<.8f) Offset=FMath::Lerp(FVector(96,0,-28),FVector(96,0,30),Ease((T-.6f)/.2f));
-        else Offset=FMath::Lerp(FVector(96,0,30),FVector::ZeroVector,Ease((T-.8f)/.2f));
+        // Clear the rim before translating horizontally in either direction.
+        const FVector Offset=BasinMotion(T,false);
         const auto Parts=DyeParts();
-        if(DyeStartLocations.Num()==Parts.Num()) for(int32 I=0;I<Parts.Num();++I) Parts[I]->SetRelativeLocation(DyeStartLocations[I]+Offset);
+        if(DyeStartLocations.Num()==Parts.Num()) for(int32 I=0;I<Parts.Num();++I) SetPartLocation(Parts[I],DyeStartLocations[I]+Offset);
         Flow->ReportDyeProgress(MotionToken,FMath::Clamp((T-.45f)/.55f,0.f,1.f));
     }
 }
@@ -265,21 +326,23 @@ void AIndigoCraftPreview::Tick(float DeltaSeconds)
     Super::Tick(DeltaSeconds);
     if (!IsValid(Flow)) return;
     UpdateHandles();
+    UpdateClothParameters();
     const bool Trial=Flow->Step==EIndigoStep::Trial;
     const bool DyeStage=Flow->Step==EIndigoStep::Dye || Flow->Step==EIndigoStep::Wash || Trial;
     const bool Final=Flow->Step==EIndigoStep::Reveal || Flow->Step==EIndigoStep::End || Flow->Step==EIndigoStep::Delivery;
     const bool Craft=Flow->Step==EIndigoStep::Fold || Flow->Step==EIndigoStep::Clamp || DyeStage || Final;
     SetActorHiddenInGame(!Craft);
     for (AActor* Sample:SelectionSamples) if (IsValid(Sample)) Sample->SetActorHiddenInGame(Craft);
-    DyeBasin->SetVisibility(DyeStage); DyeWater->SetVisibility(DyeStage);
+    DyeBasin->SetVisibility(Craft); DyeWater->SetVisibility(Craft);
     DyeSwatch->SetVisibility(DyeStage && !Trial);TrialCloth->SetVisibility(Trial);
     Cloth->SetVisibility(!Trial);
     for(int32 I=0;I<FuelMarkers.Num();++I) FuelMarkers[I]->SetVisibility(Flow->bEnableTemperatureRules && (Trial || Flow->Step==EIndigoStep::Dye) && I<Flow->Fuel);
-    WashBasin->SetVisibility(Flow->Step==EIndigoStep::Wash); WashWater->SetVisibility(Flow->Step==EIndigoStep::Wash);
-    LowerPlate->SetVisibility(!Final && !Trial); UpperPlate->SetVisibility(!Final && !Trial); LeftClamp->SetVisibility(!Final && !Trial); RightClamp->SetVisibility(!Final && !Trial);
+    WashBasin->SetVisibility(Craft); WashWater->SetVisibility(Craft);
+    const bool Assembly=Flow->Step==EIndigoStep::Clamp || Flow->Step==EIndigoStep::Dye || Flow->Step==EIndigoStep::Wash;
+    LowerPlate->SetVisibility(Assembly); UpperPlate->SetVisibility(Assembly); LeftClamp->SetVisibility(Assembly); RightClamp->SetVisibility(Assembly);
     FoldLine->SetVisibility(Flow->Step==EIndigoStep::Fold && !Flow->bAnimationBusy);
-    FoldLine->SetRelativeLocation(ClothCenter+FVector(0,0,ClothSize.Z*.5f+.2f));
-    FoldLine->SetRelativeScale3D(CompletedFolds%2==0?FVector(.008f,ClothSize.Y/100.f,.003f):FVector(ClothSize.X/100.f,.008f,.003f));
+    SetPartLocation(FoldLine,ClothCenter+FVector(0,0,ClothSize.Z*.5f+.2f));
+    SetPartScale(FoldLine,CompletedFolds%2==0?FVector(.008f,ClothSize.Y/100.f,.003f):FVector(ClothSize.X/100.f,.008f,.003f));
     if (!MotionToken) return;
     // An external reset, completion, or step change must never let an old motion finish a newer one.
     if (!Flow->bAnimationBusy || Flow->GetAnimationToken()!=MotionToken) { MotionToken=0; ActiveCue=NAME_None; MovingCloth->SetVisibility(false); return; }

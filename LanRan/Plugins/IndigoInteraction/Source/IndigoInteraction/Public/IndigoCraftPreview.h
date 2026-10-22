@@ -10,6 +10,7 @@ class USceneComponent;
 class UMaterialInstanceDynamic;
 class AIndigoCraftHandle;
 class UTexture2D;
+class UMaterialInterface;
 
 // Replaceable blockout rig. Its own completed motion returns the original flow token.
 UCLASS(Blueprintable)
@@ -42,6 +43,11 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") bool bUnfolded = false;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") FIndigoResult DisplayedResult;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") int32 PreviewDepth = 0;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|Materials") FRotator ClothRotation = FRotator(0.f,-90.f,0.f);
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|Materials") TObjectPtr<UMaterialInterface> RuntimeClothMaterial;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|Geometry", meta=(ClampMin="90")) float BasinDiameter = 112.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|Geometry", meta=(ClampMin="100")) float BasinDistance = 116.f;
+    UFUNCTION(BlueprintPure, Category="Indigo|Materials") static float ColorDepthForStage(int32 Depth);
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") float DyeProgress = 0.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") int32 CompletedFolds = 0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") bool bPlaced = false;
@@ -77,4 +83,10 @@ private:
     void FinishMotion();
     TArray<USceneComponent*> DyeParts() const;
     void UpdateHandles();
+    TMap<USceneComponent*,FVector> PartCenters;
+    FVector PartCenter(USceneComponent* Part) const;
+    void SetPartLocation(USceneComponent* Part,const FVector& Center);
+    void SetPartScale(UStaticMeshComponent* Part,const FVector& CanonicalScale);
+    void UpdateClothParameters();
+    FVector BasinMotion(float T,bool bWash) const;
 };

@@ -26,8 +26,10 @@ void AIndigoPatternSource::OnConstruction(const FTransform& Transform)
     {
         const FBoxSphereBounds Bounds = Mesh->GetBounds();
         BoardMesh->SetRelativeScale3D(FVector(VisualScale));
-        BoardMesh->SetRelativeLocation(-Bounds.Origin * VisualScale);
-        FVector Extent = Bounds.BoxExtent * VisualScale + FVector(2.f);
+        BoardMesh->SetRelativeLocation(-BoardMesh->GetRelativeRotation().RotateVector(Bounds.Origin * VisualScale));
+        const FVector E=Bounds.BoxExtent*VisualScale;
+        const FRotationMatrix Rotation(BoardMesh->GetRelativeRotation());
+        FVector Extent=Rotation.GetScaledAxis(EAxis::X).GetAbs()*E.X+Rotation.GetScaledAxis(EAxis::Y).GetAbs()*E.Y+Rotation.GetScaledAxis(EAxis::Z).GetAbs()*E.Z+FVector(2.f);
         Extent.Z = FMath::Max(6.f, Extent.Z);
         HitBox->SetBoxExtent(Extent);
         PatternLabel->SetRelativeLocation(FVector(0, 0, Extent.Z + 13.f));
