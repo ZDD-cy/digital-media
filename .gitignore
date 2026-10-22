@@ -30,6 +30,9 @@ Saved/
 # 本地自动备份
 *.autosave
 
+# 第三方 Unreal MCP 插件（由 Tools/Install-MonolithMCP.ps1 安装）
+LanRan/Plugins/Monolith/
+
 # 系统文件
 Thumbs.db
 desktop.ini

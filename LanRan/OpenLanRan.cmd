@@ -1,6 +1,9 @@
 @echo off
 setlocal
 set "UE_ROOT=C:\Program Files\Epic Games\UE_5.8"
+if exist "D:\UE-devlop\engine\UE_5.8\Engine\Build\BatchFiles\Build.bat" (
+  set "UE_ROOT=D:\UE-devlop\engine\UE_5.8"
+)
 if not "%~1"=="" set "UE_ROOT=%~1"
 if not exist "%UE_ROOT%\Engine\Build\BatchFiles\Build.bat" (
   echo Unreal Engine was not found at "%UE_ROOT%".

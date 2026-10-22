@@ -6,6 +6,20 @@
 ## 文档
 
 - [Content 文件管理结构说明](LanRan/Content/README.md)
+- [MCP 接入与使用说明](Docs/MCP接入说明.md)
+
+## Unreal MCP
+
+`LanRan` 已接入 Monolith MCP。首次拉取仓库或在另一台电脑安装时执行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File Tools/Install-MonolithMCP.ps1
+```
+
+脚本会下载并校验 UE 5.8 专用的 Monolith 发布包、安装到
+`LanRan/Plugins/Monolith`，并在安装了 Codex CLI 时注册 `monolith` MCP
+服务。安装后需要重启 Unreal 编辑器，再新开一个 Codex 会话加载 MCP 工具。
+第三方插件文件不提交到仓库，脚本可重复执行。
 
 ## 版本控制（Git LFS）
 

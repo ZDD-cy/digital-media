@@ -11,6 +11,7 @@ class UMaterialInstanceDynamic;
 class AIndigoCraftHandle;
 class UTexture2D;
 class UMaterialInterface;
+class UStaticMesh;
 
 // Replaceable blockout rig. Its own completed motion returns the original flow token.
 UCLASS(Blueprintable)
@@ -44,10 +45,14 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") FIndigoResult DisplayedResult;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") int32 PreviewDepth = 0;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|Materials") FRotator ClothRotation = FRotator(0.f,-90.f,0.f);
+    // Applied only after the cloth is unfolded for the final presentation.
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|Presentation") FRotator FinalClothRotationOffset = FRotator(0.f,90.f,0.f);
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|Materials") TObjectPtr<UMaterialInterface> RuntimeClothMaterial;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|Geometry", meta=(ClampMin="90")) float BasinDiameter = 112.f;
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|Geometry", meta=(ClampMin="100")) float BasinDistance = 116.f;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Indigo|Geometry", meta=(ClampMin="0")) float PlateCloseClearance = .1f;
     UFUNCTION(BlueprintPure, Category="Indigo|Materials") static float ColorDepthForStage(int32 Depth);
+    UFUNCTION(BlueprintPure, Category="Indigo|Materials") static FLinearColor ClothColorForStage(int32 Depth);
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") float DyeProgress = 0.f;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") int32 CompletedFolds = 0;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Indigo") bool bPlaced = false;
@@ -57,6 +62,7 @@ public:
     virtual void Tick(float DeltaSeconds) override;
     virtual void ResetVisuals_Implementation() override;
     virtual void PlayIndigoAnimation_Implementation(FName Cue, int32 Token) override;
+    virtual void SetPattern_Implementation(EIndigoPattern Left, EIndigoPattern Right) override;
     virtual void SetDyeProgress_Implementation(int32 CompletedDepth, float Progress) override;
     virtual void ShowFinalQuilt_Implementation(const FIndigoResult& Result) override;
 protected:
@@ -69,15 +75,26 @@ private:
     UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> SwatchMaterial;
     UPROPERTY(Transient) TObjectPtr<UMaterialInstanceDynamic> TrialMaterial;
     UPROPERTY(Transient) TArray<TObjectPtr<AIndigoCraftHandle>> Handles;
+    UPROPERTY(Transient) TObjectPtr<UStaticMesh> AuthoredLowerPlateMesh;
+    UPROPERTY(Transient) TObjectPtr<UStaticMesh> AuthoredUpperPlateMesh;
+    UPROPERTY(Transient) TArray<TObjectPtr<UMaterialInterface>> AuthoredLowerPlateMaterials;
+    UPROPERTY(Transient) TArray<TObjectPtr<UMaterialInterface>> AuthoredUpperPlateMaterials;
     TArray<FVector> DyeStartLocations;
     FVector ClothCenter;
     FVector ClothSize;
     FVector MoveStart;
     FVector UnfoldStartSize;
+    FVector UpperPlateCloseStart;
+    float UpperPlateCloseDrop = 0.f;
     FName ActiveCue;
     int32 MotionToken = 0;
     float Elapsed = 0.f;
     bool bFoldX = true;
+    bool bPlateDefaultsCaptured = false;
+    void CapturePlateDefaults();
+    void RestorePlateVisual(UStaticMeshComponent* Plate,UStaticMesh* DefaultMesh,const TArray<TObjectPtr<UMaterialInterface>>& DefaultMaterials,const FVector& CanonicalSize);
+    void ApplyPlatePattern(UStaticMeshComponent* Plate,EIndigoPattern Pattern,const FVector& CanonicalSize);
+    void PreparePlateClose();
     void PoseCloth();
     void ApplyMotion(float T);
     void FinishMotion();

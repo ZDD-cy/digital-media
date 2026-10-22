@@ -37,6 +37,8 @@ bool FIndigoFinishTest::RunTest(const FString& Parameters)
         TestFalse(TEXT("One clamp still prevents unfold"),F->Perform(EIndigoAction::Unfold));
         Complete(D==1?EIndigoAction::UnclampRight:EIndigoAction::UnclampLeft);Complete(EIndigoAction::Unfold);
         TestTrue(TEXT("Reveal waits for delivery"),F->Step==EIndigoStep::Reveal && Rig->bUnfolded);
+        const FRotator ExpectedPresentationRotation=(Rig->ClothRotation+Rig->FinalClothRotationOffset).GetNormalized();
+        TestTrue(TEXT("Finished quilt is rotated horizontally for presentation"),Rig->Cloth->GetRelativeRotation().Equals(ExpectedPresentationRotation,.01f));
         TestEqual(TEXT("Shared depth displayed"),Rig->DisplayedResult.Depth,D);
         TestTrue(TEXT("Shared pair displayed"),Rig->DisplayedResult.Left==F->Result.Left && Rig->DisplayedResult.Right==F->Result.Right);
         TestTrue(TEXT("Full cloth restored in authored orientation"),Rig->Cloth->GetStaticMesh()->GetBounds().TransformBy(Rig->Cloth->GetComponentTransform()).BoxExtent.Equals(FVector(54,38,.175),.001));
@@ -46,6 +48,7 @@ bool FIndigoFinishTest::RunTest(const FString& Parameters)
         TestFalse(TEXT("Review cannot deliver again"),F->Perform(EIndigoAction::Deliver));F->Perform(EIndigoAction::Back);
         TestTrue(TEXT("Back returns to end"),F->Step==EIndigoStep::End);F->Restart();Rig->Tick(.1f);
         TestFalse(TEXT("Restart clears unfolded state"),Rig->bUnfolded);TestEqual(TEXT("Restart clears displayed result"),Rig->DisplayedResult.Depth,0);
+        TestTrue(TEXT("Restart restores the working cloth rotation"),Rig->Cloth->GetRelativeRotation().Equals(Rig->ClothRotation,.01f));
         TestFalse(TEXT("Wash basin hidden after reset"),Rig->WashWater->IsVisible());
     }
     // Interrupt a real wash; its old completion must not affect the next run.
