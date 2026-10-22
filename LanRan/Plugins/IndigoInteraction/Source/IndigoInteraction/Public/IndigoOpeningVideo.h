@@ -24,7 +24,9 @@ class INDIGOINTERACTION_API UIndigoOpeningVideoComponent : public UActorComponen
 public:
     UIndigoOpeningVideoComponent();
     UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Indigo|Opening Video") TObjectPtr<UMediaSource> VideoSource;
-    UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Indigo|Opening Video") bool bPlayOnStart=true;
+    UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Indigo|Opening Video") FString VideoFile = TEXT("Movies/Opening.mp4");
+    UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Indigo|Opening Video") FName PreferredPlayerName = TEXT("WmfMedia");
+    UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Indigo|Opening Video") bool bPlayOnStart=false;
     UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Indigo|Opening Video",meta=(ClampMin="1")) float OpenTimeoutSeconds=15.f;
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Indigo|Opening Video") bool bPlaying=false;
     UPROPERTY(BlueprintAssignable,Category="Indigo|Opening Video") FIndigoOpeningFinished OnOpeningFinished;

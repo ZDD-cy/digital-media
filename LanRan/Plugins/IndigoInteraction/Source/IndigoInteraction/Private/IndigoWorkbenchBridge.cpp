@@ -1,6 +1,6 @@
 #include "IndigoWorkbenchBridge.h"
+#include "IndigoInterfaceWidget.h"
 #include "IndigoOpeningVideo.h"
-#include "IndigoWorkbenchWidget.h"
 #include "IndigoDirector.h"
 #include "IndigoFlowComponent.h"
 #include "IndigoInteractable.h"
@@ -20,6 +20,13 @@
 #include "EngineUtils.h"
 #include "InputCoreTypes.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "MediaPlayer.h"
+#include "MediaSoundComponent.h"
+#include "FileMediaSource.h"
+#include "Components/AudioComponent.h"
+#include "Sound/SoundBase.h"
+#include "Misc/Paths.h"
 #include "UnrealClient.h"
 
 AIndigoWorkbenchBridge::AIndigoWorkbenchBridge()
@@ -27,6 +34,8 @@ AIndigoWorkbenchBridge::AIndigoWorkbenchBridge()
     SetRootComponent(CreateDefaultSubobject<USceneComponent>(TEXT("Root")));
     PrimaryActorTick.bCanEverTick = true;
     OpeningVideo=CreateDefaultSubobject<UIndigoOpeningVideoComponent>(TEXT("OpeningVideo"));
+    OpeningVideo->bPlayOnStart = false;
+    BackgroundMusicAsset = TSoftObjectPtr<USoundBase>(FSoftObjectPath(TEXT("/Game/Audio/SW_BackgroundMusic.SW_BackgroundMusic")));
 }
 void AIndigoWorkbenchBridge::BeginPlay()
 {
@@ -41,10 +50,90 @@ void AIndigoWorkbenchBridge::BeginPlay()
         Flow->OnInteractionInvalidated.AddDynamic(this,&AIndigoWorkbenchBridge::CancelDrag);
         if (Flow->bSkipReceipt && Flow->Step==EIndigoStep::Receive) Flow->Restart();
     }
-    Widget = CreateWidget<UIndigoWorkbenchWidget>(Player, UIndigoWorkbenchWidget::StaticClass());
+    Player->SetIgnoreMoveInput(true);
+    Player->SetIgnoreLookInput(true);
+    Player->bShowMouseCursor = true;
+    Player->SetInputMode(FInputModeGameAndUI().SetHideCursorDuringCapture(false).SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock));
+    Widget = CreateWidget<UIndigoInterfaceWidget>(Player, UIndigoInterfaceWidget::StaticClass());
     if (Widget) { Widget->SetBridge(this); Widget->AddToViewport(10); Widget->Refresh(); }
 }
 UIndigoFlowComponent* AIndigoWorkbenchBridge::GetFlow() const { return IsValid(Director) ? Director->Flow.Get() : nullptr; }
+void AIndigoWorkbenchBridge::PlayBackgroundMusic()
+{
+    if (BackgroundMusicAudio || (BackgroundMusicSound && BackgroundMusicPlayer)) return;
+    USoundBase* MusicAsset = BackgroundMusicAsset.LoadSynchronous();
+    if (!MusicAsset) MusicAsset = LoadObject<USoundBase>(nullptr, TEXT("/Game/Audio/SW_BackgroundMusic.SW_BackgroundMusic"));
+    if (MusicAsset)
+    {
+        BackgroundMusicAudio = UGameplayStatics::CreateSound2D(this, MusicAsset, 0.f, 1.f, 0.f, nullptr, false, false);
+        if (BackgroundMusicAudio)
+        {
+            BackgroundMusicAudio->bIsUISound = true;
+            BackgroundMusicAudio->FadeIn(1.75f, BackgroundMusicVolume);
+            UE_LOG(LogTemp, Display, TEXT("Indigo: imported background music started."));
+            return;
+        }
+    }
+    const FString MusicPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectContentDir(), BackgroundMusicFile));
+    if (!FPaths::FileExists(MusicPath))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Indigo: background music not found at %s"), *MusicPath);
+        return;
+    }
+    UFileMediaSource* Source = NewObject<UFileMediaSource>(this, TEXT("IndigoBackgroundMusicSource"));
+    if (!Source) return;
+    Source->SetFilePath(MusicPath);
+    BackgroundMusicPlayer = NewObject<UMediaPlayer>(this, TEXT("IndigoBackgroundMusicPlayer"));
+    BackgroundMusicPlayer->PlayOnOpen = false;
+    BackgroundMusicPlayer->OnMediaOpened.AddDynamic(this, &AIndigoWorkbenchBridge::HandleMusicOpened);
+    BackgroundMusicPlayer->OnMediaOpenFailed.AddDynamic(this, &AIndigoWorkbenchBridge::HandleMusicFailed);
+    BackgroundMusicSound = NewObject<UMediaSoundComponent>(this, TEXT("IndigoBackgroundMusicSound"));
+    BackgroundMusicSound->bIsUISound = true;
+    BackgroundMusicSound->SetVolumeMultiplier(0.f);
+    BackgroundMusicSound->SetMediaPlayer(BackgroundMusicPlayer);
+    BackgroundMusicSound->RegisterComponent();
+    MusicFadeElapsed = 0.f;
+    if (!BackgroundMusicPlayer->OpenSource(Source))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Indigo: failed to open background music at %s"), *MusicPath);
+        StopBackgroundMusic();
+    }
+}
+void AIndigoWorkbenchBridge::HandleMusicOpened(FString Url)
+{
+    if (!BackgroundMusicPlayer) return;
+    BackgroundMusicPlayer->SetLooping(true);
+    MusicFadeElapsed = 0.f;
+    if (!BackgroundMusicPlayer->Play()) StopBackgroundMusic();
+}
+void AIndigoWorkbenchBridge::HandleMusicFailed(FString Url)
+{
+    UE_LOG(LogTemp, Warning, TEXT("Indigo: background music failed to decode: %s"), *Url);
+    StopBackgroundMusic();
+}
+void AIndigoWorkbenchBridge::StopBackgroundMusic()
+{
+    if (BackgroundMusicAudio)
+    {
+        BackgroundMusicAudio->Stop();
+        BackgroundMusicAudio->DestroyComponent();
+        BackgroundMusicAudio = nullptr;
+    }
+    if (BackgroundMusicSound)
+    {
+        BackgroundMusicSound->SetMediaPlayer(nullptr);
+        BackgroundMusicSound->DestroyComponent();
+        BackgroundMusicSound = nullptr;
+    }
+    if (BackgroundMusicPlayer)
+    {
+        BackgroundMusicPlayer->OnMediaOpened.RemoveDynamic(this, &AIndigoWorkbenchBridge::HandleMusicOpened);
+        BackgroundMusicPlayer->OnMediaOpenFailed.RemoveDynamic(this, &AIndigoWorkbenchBridge::HandleMusicFailed);
+        BackgroundMusicPlayer->Close();
+        BackgroundMusicPlayer = nullptr;
+    }
+    MusicFadeElapsed = 0.f;
+}
 ACameraActor* AIndigoWorkbenchBridge::ResolveCamera(EIndigoCamera Camera) const
 {
     if(IsValid(Director)) if(const auto* Entry=Director->Cameras.Find(Camera)) if(IsValid(Entry->Get())) return Entry->Get();
@@ -90,9 +179,43 @@ bool AIndigoWorkbenchBridge::IsPlayerNear() const
     const APawn* Pawn = Player ? Player->GetPawn() : nullptr;
     return Pawn && FVector::DistSquared(Pawn->GetActorLocation(), GetActorLocation()) <= FMath::Square(InteractionRadius);
 }
+void AIndigoWorkbenchBridge::StartGame()
+{
+    if (bGameStarted) return;
+    bGameStarted = true;
+    if (Player)
+    {
+        Player->SetIgnoreMoveInput(false);
+        Player->SetIgnoreLookInput(false);
+        Player->bShowMouseCursor = false;
+        Player->SetInputMode(FInputModeGameOnly());
+    }
+    PlayBackgroundMusic();
+    if (OpeningVideo && !OpeningVideo->PlayOpeningVideo())
+    {
+        UE_LOG(LogTemp, Display, TEXT("Indigo: opening video was unavailable; entering the game directly."));
+    }
+    if (Widget) Widget->Refresh();
+}
+void AIndigoWorkbenchBridge::QuitGame()
+{
+    if (Player) UKismetSystemLibrary::QuitGame(this, Player, EQuitPreference::Quit, false);
+}
+bool AIndigoWorkbenchBridge::SelectNextPattern(EIndigoPattern Pattern)
+{
+    UIndigoFlowComponent* Flow = GetFlow();
+    if (!bGameStarted || !bWorkbenchActive || !Flow || Flow->Step != EIndigoStep::Select || Pattern == EIndigoPattern::None) return false;
+    bool bLeft = false;
+    if (Flow->Result.Left == EIndigoPattern::None) bLeft = true;
+    else if (Flow->Result.Right == EIndigoPattern::None) bLeft = false;
+    else return false;
+    const bool bSelected = Flow->SetPattern(bLeft, Pattern);
+    if (Widget) Widget->Refresh();
+    return bSelected;
+}
 bool AIndigoWorkbenchBridge::EnterWorkbench()
 {
-    if(OpeningVideo && OpeningVideo->bPlaying) return false;
+    if(!bGameStarted || (OpeningVideo && OpeningVideo->bPlaying)) return false;
     if (bWorkbenchActive || !Player || !IsPlayerNear() || !GetFlow() || !IsValid(WorkbenchCamera)) return false;
     PreviousView = Player->GetViewTarget();
     bPreviousCursor = Player->bShowMouseCursor;
@@ -296,6 +419,12 @@ void AIndigoWorkbenchBridge::Tick(float Delta)
 {
     Super::Tick(Delta);
     if (!Player) return;
+    if (BackgroundMusicSound && BackgroundMusicPlayer && BackgroundMusicPlayer->IsPlaying())
+    {
+        MusicFadeElapsed += Delta;
+        const float Fade = FMath::Clamp(MusicFadeElapsed / 2.f, 0.f, 1.f);
+        BackgroundMusicSound->SetVolumeMultiplier(BackgroundMusicVolume * Fade * Fade * (3.f - 2.f * Fade));
+    }
     if(bWorkbenchActive)
     {
         SubtitleRemaining=FMath::Max(0.f,SubtitleRemaining-Delta);
@@ -309,7 +438,7 @@ void AIndigoWorkbenchBridge::Tick(float Delta)
         BlendRemaining=FMath::Max(0.f,BlendRemaining-Delta);
         if (BlendRemaining==0.f) if (UIndigoFlowComponent* Flow=GetFlow()) Flow->SetCameraBusy(false);
     }
-    if (Player->WasInputKeyJustPressed(EKeys::E))
+    if (bGameStarted && !(OpeningVideo && OpeningVideo->bPlaying) && Player->WasInputKeyJustPressed(EKeys::E))
     {
         if (bWorkbenchActive) LeaveWorkbench(); else EnterWorkbench();
     }
@@ -351,6 +480,7 @@ void AIndigoWorkbenchBridge::Tick(float Delta)
 void AIndigoWorkbenchBridge::EndPlay(const EEndPlayReason::Type Reason)
 {
     LeaveWorkbench();
+    StopBackgroundMusic();
     if(UIndigoFlowComponent* Flow=GetFlow())
     {
         Flow->OnStepChanged.RemoveDynamic(this,&AIndigoWorkbenchBridge::HandleStep);

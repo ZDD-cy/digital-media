@@ -5,6 +5,7 @@
 #include "MediaPlayer.h"
 #include "MediaTexture.h"
 #include "MediaSoundComponent.h"
+#include "FileMediaSource.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
@@ -17,17 +18,33 @@
 #include "Components/Image.h"
 #include "Components/ScaleBox.h"
 #include "Components/TextBlock.h"
+#include "Misc/Paths.h"
 
 UIndigoOpeningVideoComponent::UIndigoOpeningVideoComponent() { PrimaryComponentTick.bCanEverTick=false; }
 void UIndigoOpeningVideoComponent::BeginPlay()
 {
     Super::BeginPlay();
-    if(bPlayOnStart && VideoSource) PlayOpeningVideo();
+    if(bPlayOnStart) PlayOpeningVideo();
 }
 bool UIndigoOpeningVideoComponent::PlayOpeningVideo()
 {
-    if(bPlaying || !VideoSource || !GetWorld()) return false;
+    if(bPlaying || !GetWorld()) return false;
     if(const auto* Bridge=Cast<AIndigoWorkbenchBridge>(GetOwner())) if(Bridge->bWorkbenchActive) return false;
+    if(!VideoSource)
+    {
+        const FString MoviePath=FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectContentDir(),VideoFile));
+        VideoSource=LoadObject<UMediaSource>(nullptr,TEXT("/Game/Movies/MS_Opening.MS_Opening"));
+        if(UFileMediaSource* ImportedSource=Cast<UFileMediaSource>(VideoSource))
+            ImportedSource->SetFilePath(MoviePath);
+    }
+    if(!VideoSource)
+    {
+        const FString MoviePath=FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectContentDir(),VideoFile));
+        if(!FPaths::FileExists(MoviePath)) { UE_LOG(LogTemp,Warning,TEXT("Indigo: opening movie not found at %s"),*MoviePath); return false; }
+        UFileMediaSource* FileSource=NewObject<UFileMediaSource>(this,TEXT("IndigoOpeningMovieSource"));
+        FileSource->SetFilePath(MoviePath);
+        VideoSource=FileSource;
+    }
     Player=UGameplayStatics::GetPlayerController(this,0);
     if(!Player || !Player->IsLocalController()) return false;
     bPlaying=true;bPreviousCursor=Player->bShowMouseCursor;
@@ -35,6 +52,7 @@ bool UIndigoOpeningVideoComponent::PlayOpeningVideo()
     Player->bShowMouseCursor=true;
     Player->SetInputMode(FInputModeGameAndUI().SetHideCursorDuringCapture(false));
     MediaPlayer=NewObject<UMediaPlayer>(this);MediaPlayer->PlayOnOpen=false;
+    if(!PreferredPlayerName.IsNone()) MediaPlayer->SetDesiredPlayerName(PreferredPlayerName);
     MediaPlayer->OnMediaOpened.AddDynamic(this,&UIndigoOpeningVideoComponent::MediaOpened);
     MediaPlayer->OnMediaOpenFailed.AddDynamic(this,&UIndigoOpeningVideoComponent::MediaFailed);
     MediaPlayer->OnEndReached.AddDynamic(this,&UIndigoOpeningVideoComponent::MediaEnded);
